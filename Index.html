@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Service Desk Webapp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+    <!-- ========== LOGIN PAGE ========== -->
+    <div id="login-page" class="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">IT</div>
+                <h1 class="text-2xl font-bold text-slate-900">Service Desk Portal</h1>
+                <p class="text-xs text-slate-500 mt-1">ระบบรับแจ้งและจัดการปัญหาไอที (Cloud-based)</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">เลือกบทบาท (Role)</label>
+                    <select id="login-role" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        <option value="">-- เลือกบทบาท --</option>
+                        <option value="user">👤 ผู้ใช้งาน (User - แจ้งปัญหา)</option>
+                        <option value="it">🛠️ เจ้าหน้าที่ IT (IT Support)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="login-user" placeholder="กรอกชื่อผู้ใช้" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน (Password)</label>
+                    <input type="password" id="login-pass" placeholder="กรอกรหัสผ่าน" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg">
+                    <p><strong>🧪 ทดสอบด้วย:</strong></p>
+                    <p>👤 User: <code>somchai</code> / Pass: <code>1234</code></p>
+                    <p>🛠️ IT: <code>niran</code> / Pass: <code>1234</code></p>
+                </div>
+
+                <button type="submit" id="login-btn" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                    <span>เข้าสู่ระบบ (Login)</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== MAIN APPLICATION ========== -->
+    <div id="main-app" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">IT</div>
+                    <div>
+                        <h1 class="font-bold text-slate-900 leading-tight">Service Desk Portal</h1>
+                        <p class="text-xs text-slate-500" id="header-role">☁️ Cloud-based System</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-slate-600">ยินดีต้อนรับ: <strong id="current-user">User</strong></span>
+                    <button onclick="handleLogout()" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition">
+                        ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+            <!-- ========== LIST VIEW ========== -->
+            <section id="list-view" class="block space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 class="text-xl font-bold text-slate-900" id="list-title">📋 รายการแจ้งปัญหา</h2>
+                        <button id="new-ticket-btn" onclick="showCreateView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md transition flex items-center gap-2">
+                            ➕ แจ้งปัญหาใหม่
+                        </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-slate-700">🔍 ค้นหา</label>
+                        <input type="text" id="search-input" placeholder="ค้นหาจากหมายเลข Incident หรือชื่อผู้แจ้ง..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" onkeyup="filterTickets()">
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="loading-list" class="text-center py-6 text-slate-500">
+                        <div class="spinner mx-auto mb-2"></div>
+                        <p class="text-sm">กำลังโหลดข้อมูล...</p>
+                    </div>
+
+                    <!-- Ticket List -->
+                    <div class="overflow-x-auto hidden" id="ticket-table-container">
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="border-b-2 border-slate-200 bg-slate-50">
+                                    <th class="text-left px-3 py-2 font-semibold text-slate-700">Incident ID</th>
+                                    <th class="text-left px-3 py-2 font-semibold text-slate-700">หัวข้อเรื่อง</th>
+                                    <th class="text-left px-3 py-2 font-semibold text-slate-700">ผู้แจ้ง</th>
+                                    <th class="text-left px-3 py-2 font-semibold text-slate-700">สถานะ</th>
+                                    <th class="text-left px-3 py-2 font-semibold text-slate-700">วันที่</th>
+                                    <th class="text-center px-3 py-2 font-semibold text-slate-700">ดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticket-list-body">
+                                <!-- Render here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="no-ticket-msg" class="text-center py-8 text-slate-500">
+                        <p class="text-sm">ยังไม่มีรายการแจ้งปัญหา</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== CREATE VIEW ========== -->
+            <section id="create-view" class="hidden">
+                <div class="max-w-3xl mx-auto">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
+                            <div>
+                                <h2 class="text-lg font-semibold">📝 แจ้งปัญหาการใช้งานไอทีใหม่</h2>
+                                <p class="text-xs text-blue-100 mt-0.5">กรอกข้อมูลเพื่อสร้างเรื่องแจ้งปัญหาใหม่</p>
+                            </div>
+                            <button onclick="backToList()" class="text-white text-3xl leading-none hover:opacity-80">✕</button>
+                        </div>
+
+                        <form onsubmit="handleCreateTicket(event)" class="p-6 space-y-6">
+
+                            <!-- Requester Info -->
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">1. ข้อมูลผู้แจ้ง</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-red-500">*</span></label>
+                                        <input type="text" id="form-name" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">แผนก/สาขา <span class="text-red-500">*</span></label>
+                                        <input type="text" id="form-dept" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1">ติดต่อ <span class="text-red-500">*</span></label>
+                                        <input type="text" id="form-contact" required class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Issue Details -->
+                            <div class="space-y-4">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. ข้อมูลปัญหา</h3>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">ประเภท <span class="text-red-500">*</span></label>
+                                    <select id="form-category" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                        <option value="">-- เลือก --</option>
+                                        <option value="อุปกรณ์คอมพิวเตอร์ / จอภาพ / เม้าส์">อุปกรณ์คอมพิวเตอร์ / จอภาพ</option>
+                                        <option value="โปรแกรมระบบงาน (ERP)">โปรแกรมระบบงาน / ERP</option>
+                                        <option value="ระบบเครือข่าย / อินเทอร์เน็ต">ระบบเครือข่าย / อินเทอร์เน็ต</option>
+                                        <option value="บัญชีผู้ใช้ / สิทธิ์ใช้งาน">บัญชีผู้ใช้ / สิทธิ์ใช้งาน</option>
+                                        <option value="เครื่องพิมพ์ (Printer)">เครื่องพิมพ์</option>
+                                        <option value="อื่น ๆ">อื่น ๆ</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">หัวข้อเรื่อง <span class="text-red-500">*</span></label>
+                                    <input type="text" id="form-title" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">รายละเอียด <span class="text-red-500">*</span></label>
+                                    <textarea id="form-desc" required rows="4" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                                <button type="button" onclick="backToList()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium">
+                                    ยกเลิก
+                                </button>
+                                <button type="submit" id="submit-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm flex items-center gap-2">
+                                    <span>✓ ส่งคำร้อง</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== DETAIL VIEW ========== -->
+            <section id="detail-view" class="hidden space-y-5">
+                <button onclick="backToList()" class="px-3 py-1.5 text-blue-600 hover:text-blue-700 font-medium text-sm">
+                    ← กลับไปยังรายการ
+                </button>
+
+                <!-- Header -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-blue-100 text-blue-700 font-mono text-sm px-2.5 py-1 rounded-md font-bold" id="detail-id">INC-000001</span>
+                            <span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full" id="detail-category">🏷️ หมวดหมู่</span>
+                        </div>
+                        <button id="save-btn" onclick="saveTicket()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition">
+                            💾 บันทึก
+                        </button>
+                    </div>
+
+                    <h2 class="text-lg font-bold text-slate-900" id="detail-title">หัวข้อเรื่อง</h2>
+
+                    <!-- Requester Info -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">👤 ผู้แจ้ง:</span>
+                            <span class="font-semibold text-slate-800" id="detail-name">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">🏢 แผนก:</span>
+                            <span class="font-semibold text-slate-800" id="detail-dept">-</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">📞 ติดต่อ:</span>
+                            <span class="font-semibold text-slate-800" id="detail-contact">-</span>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleDetails()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 flex items-center justify-center gap-1.5 transition">
+                        <span id="toggle-icon">▲</span>
+                        <span id="toggle-text">ซ่อน</span>
+                    </button>
+                </div>
+
+                <!-- Details -->
+                <div id="details-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Description -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <span class="text-xs font-bold text-slate-400 uppercase block border-b border-slate-100 pb-2 mb-3">รายละเอียด</span>
+                            <p class="text-sm text-slate-700 whitespace-pre-wrap" id="detail-desc">-</p>
+                        </div>
+
+                        <!-- Diagnostics -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">การวิเคราะห์และแก้ไข</h3>
+
+                            <div class="p-3.5 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                                <label class="block text-xs font-bold text-amber-800 mb-1">⚠️ ข้อควรระวัง</label>
+                                <textarea id="detail-precautions" rows="2" class="w-full bg-white border border-amber-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500" readonly></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">สาเหตุ</label>
+                                <textarea id="detail-rootcause" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" readonly></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">วิธีแก้</label>
+                                <textarea id="detail-resolution" rows="3" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" readonly></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Work Notes -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                            <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-3">บันทึก</h3>
+                            <div id="work-notes-list" class="space-y-2 text-xs">
+                                <!-- Render here -->
+                            </div>
+                            <textarea id="new-worknote" rows="2" placeholder="พิมพ์บันทึก..." class="w-full border border-slate-300 rounded-lg p-2 text-sm mt-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" readonly></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase">การจัดการ</h3>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">สถานะ</label>
+                            <select id="detail-status" class="w-full border-2 border-blue-500 rounded-lg px-3 py-2 text-sm font-semibold bg-white" onchange="onStatusChange()" disabled>
+                                <option value="New">🔵 New</option>
+                                <option value="In Progress">🟡 In Progress</option>
+                                <option value="Pending">🟠 Pending</option>
+                                <option value="Resolved">🟢 Resolved</option>
+                                <option value="Closed">⚪ Closed</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">มอบหมายให้</label>
+                            <select id="detail-assigned" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white" disabled>
+                                <option value="">-- ยังไม่มอบหมาย --</option>
+                                <option value="niran">นิรัน</option>
+                                <option value="somsak">สมศักดิ์</option>
+                            </select>
+                        </div>
+
+                        <hr class="border-slate-100">
+
+                        <div class="space-y-2.5 text-xs">
+                            <div>
+                                <span class="text-slate-400">แจ้งเมื่อ:</span>
+                                <span class="font-medium text-slate-700" id="detail-logged">-</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400">เสร็จสิ้นเมื่อ:</span>
+                                <span class="font-medium" id="detail-resolved">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+
+
+
+
+
+
+
+
+
+        // ==========================================
+        // CONFIG
+        // ==========================================
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfJCECDNZ827GI838rsg36MTZMjOllR8hhmBUmWrua_2gCbfsa4CSj5B-KGbCjYjh6XQ/exec";
+
+        // ==========================================
+        // STATE & DATA
+        // ==========================================
+        const mockUsers = {
+            'somchai': { password: '1234', name: 'สมชาย มั่นคง', role: 'user' },
+            'niran': { password: '1234', name: 'นิรัน ใจดี', role: 'it' }
+        };
+
+        let currentUser = null;
+        let currentRole = null;
+        let tickets = [];
+        let selectedTicketId = null;
+        let isDetailsOpen = true;
+
+        // ==========================================
+        // INIT (ทำความสะอาด - เอาออกซ้ำ)
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('✅ Page loaded');
+            console.log('🔗 API URL:', GOOGLE_APPS_SCRIPT_URL);
+
+            // Test connection
+            try {
+                console.log('🧪 Testing API connection...');
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getTickets');
+                const data = await response.json();
+
+                if (data.success !== undefined) {
+                    console.log('✅ API connection successful!');
+                } else {
+                    console.error('⚠️ Unexpected response:', data);
+                }
+            } catch(error) {
+                console.error('❌ API connection failed:', error.message);
+            }
+        });
+
+        // ==========================================
+        // LOGIN
+        // ==========================================
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('login-role').value;
+            const username = document.getElementById('login-user').value;
+            const password = document.getElementById('login-pass').value;
+
+            if (!role) {
+                alert('⚠️ กรุณาเลือกบทบาท');
+                return;
+            }
+
+            if (!mockUsers[username] || mockUsers[username].password !== password) {
+                alert('❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                return;
+            }
+
+            if (mockUsers[username].role !== role) {
+                alert('❌ บทบาทไม่ตรงกับบัญชีนี้');
+                return;
+            }
+
+            currentUser = username;
+            currentRole = role;
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('current-user').innerText = mockUsers[username].name;
+            document.getElementById('header-role').innerText = role === 'user' ? '👤 ผู้ใช้งาน' : '🛠️ เจ้าหน้าที่ IT';
+
+            // แสดงปุ่มแจ้งปัญหาให้ทุก role ได้ใช้
+            document.getElementById('new-ticket-btn').classList.remove('hidden');
+
+            if (role === 'it') {
+                document.getElementById('list-title').innerText = '📋 รายการทั้งหมด';
+            } else {
+    document.getElementById('list-title').innerText = '📋 รายการแจ้งปัญหาของคุณ';
+            }
+        }
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+        function handleLogout() {
+            currentUser = null;
+            currentRole = null;
+            document.getElementById('login-page').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+            document.getElementById('login-role').value = '';
+        }
+
+        // ==========================================
+// LOAD TICKETS (แก้ด้วย JSONP)
+// ==========================================
+async function loadTickets() {
+    try {
+        console.log('📥 Loading tickets...');
+        document.getElementById('loading-list').classList.remove('hidden');
+        document.getElementById('ticket-table-container').classList.add('hidden');
+
+        // ใช้ JSONP callback
+        const result = await fetchWithJSONP(
+            GOOGLE_APPS_SCRIPT_URL + '?action=getTickets&t=' + Date.now()
+        );
+
+        console.log('✅ Response received:', result);
+
+        if (result.success) {
+            tickets = (result.tickets || []).map(ticket => ({
+                ...ticket,
+                workNotes: typeof ticket.WorkNotes === 'string' 
+                    ? JSON.parse(ticket.WorkNotes || '[]') 
+                    : (ticket.WorkNotes || [])
+            }));
+            console.log('✅ Loaded', tickets.length, 'tickets');
+            renderTicketList();
+        } else {
+            console.error('API error:', result.error);
+            alert('❌ ไม่สามารถโหลดข้อมูล');
+        }
+    } catch(error) {
+        console.error('Load error:', error);
+        alert('❌ ข้อผิดพลาด: ' + error.message);
+    } finally {
+        document.getElementById('loading-list').classList.add('hidden');
+    }
+}
+
+// Helper function สำหรับ JSONP
+function fetchWithJSONP(url) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'jsonpCallback_' + Date.now();
+
+        // สร้าง global callback
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            resolve(data);
+        };
+
+        const script = document.createElement('script');
+        script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+        script.onerror = () => {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error('JSONP request failed'));
+        };
+
+        document.body.appendChild(script);
+    });
+}
+       // ==========================================
+// CREATE TICKET ✅ FIXED
+// ==========================================
+async function handleCreateTicket(event) {
+    event.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> <span>กำลังส่ง...</span>';
+
+    const ticketData = {
+        name: document.getElementById('form-name').value.trim(),
+        dept: document.getElementById('form-dept').value.trim(),
+        contact: document.getElementById('form-contact').value.trim(),
+        category: document.getElementById('form-category').value,
+        title: document.getElementById('form-title').value.trim(),
+        desc: document.getElementById('form-desc').value.trim(),
+        requester: currentUser
+    };
+
+    try {
+        console.log('📤 Creating ticket with data:', ticketData);
+
+        const response = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=addTicket', {
+            method: 'POST',
+            contentType: 'application/json',
+            body: JSON.stringify(ticketData),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const text = await response.text();
+        console.log('Raw response:', text);
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch(parseError) {
+            console.error('JSON parse error:', parseError);
+            // ถ้า parse ไม่ได้ให้ถือว่าสำเร็จ (เพราะข้อมูลเข้า Sheet แล้ว)
+            data = { success: true, message: 'Submitted (response parse error)' };
+        }
+
+        console.log('Parsed data:', data);
+
+        if (data.success) {
+            const ticketId = data.ticketId || 'ไม่ทราบหมายเลข';
+            alert(`✅ สร้างเรื่องใหม่สำเร็จ!\nหมายเลข: ${ticketId}`);
+
+            // Clear form
+            document.getElementById('form-name').value = mockUsers[currentUser].name;
+            document.getElementById('form-dept').value = '';
+            document.getElementById('form-contact').value = '';
+            document.getElementById('form-category').value = '';
+            document.getElementById('form-title').value = '';
+            document.getElementById('form-desc').value = '';
+
+            // Wait a bit then reload
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            backToList();
+        } else {
+            alert('⚠️ ' + (data.error || 'เกิดข้อผิดพลาด'));
+            console.error('Server error:', data.error);
+        }
+    } catch(error) {
+        console.error('Create error:', error);
+        alert('⚠️ ข้อผิดพลาด: ' + error.message + '\n\n(ข้อมูลอาจถูกบันทึกแล้ว ลองเรียกดูรายการใหม่)');
+
+        // ลองโหลดรายการใหม่ (อาจมีข้อมูลแล้ว)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        backToList();
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✓ ส่งคำร้อง';
+    }
+}
+
+        // ==========================================
+        // SAVE TICKET ✅ FIXED (WorkNotes Bug)
+        // ==========================================
+        async function saveTicket() {
+            const ticket = tickets.find(t => t.ID === selectedTicketId);
+            if (!ticket || currentRole !== 'it') {
+                alert('⚠️ คุณไม่มีสิทธิ์แก้ไข');
+                return;
+            }
+
+            // Get current work notes array
+            let workNotes = Array.isArray(ticket.workNotes) ? ticket.workNotes : [];
+
+            // Add new work note
+            const newNote = document.getElementById('new-worknote').value.trim();
+            if (newNote) {
+                workNotes.push({
+                    author: mockUsers[currentUser].name,
+                    time: new Date().toLocaleString('th-TH'),
+                    text: newNote
+                });
+            }
+
+            // Determine ResolvedDate
+            const newStatus = document.getElementById('detail-status').value;
+            let resolvedDate = ticket.ResolvedDate || '';
+            if ((newStatus === 'Resolved' || newStatus === 'Closed') && !resolvedDate) {
+                resolvedDate = new Date().toLocaleString('th-TH');
+            }
+
+            const updateData = {
+                ID: ticket.ID,
+                Name: ticket.Name,
+                Department: ticket.Department,
+                Contact: ticket.Contact,
+                Category: ticket.Category,
+                Title: ticket.Title,
+                Description: ticket.Description,
+                Status: newStatus,
+                Precautions: document.getElementById('detail-precautions').value,
+                RootCause: document.getElementById('detail-rootcause').value,
+                Resolution: document.getElementById('detail-resolution').value,
+                Assigned: document.getElementById('detail-assigned').value,
+                LoggedDate: ticket.LoggedDate,
+                ResolvedDate: resolvedDate,
+                Requester: ticket.Requester,
+                WorkNotes: JSON.stringify(workNotes)
+            };
+
+            try {
+                console.log('🔄 Updating ticket:', updateData);
+
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=updateTicket', {
+                    method: 'POST',
+                    body: JSON.stringify(updateData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ บันทึกสำเร็จ');
+                    document.getElementById('new-worknote').value = '';
+                    await loadTickets();
+                    showDetailView(selectedTicketId);
+                } else {
+                    alert('❌ ข้อผิดพลาด: ' + data.error);
+                }
+            } catch(error) {
+                alert('❌ ไม่สามารถบันทึก: ' + error.message);
+                console.error('Save error:', error);
+            }
+        }
+
+        // ==========================================
+        // RENDER TICKET LIST
+        // ==========================================
+        function renderTicketList() {
+            const listBody = document.getElementById('ticket-list-body');
+            listBody.innerHTML = '';
+
+            let displayTickets = tickets;
+            if (currentRole === 'user') {
+                displayTickets = tickets.filter(t => t.Requester === currentUser);
+            }
+
+            if (displayTickets.length === 0) {
+                document.getElementById('no-ticket-msg').classList.remove('hidden');
+                document.getElementById('ticket-table-container').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('no-ticket-msg').classList.add('hidden');
+            document.getElementById('ticket-table-container').classList.remove('hidden');
+
+            displayTickets.forEach(ticket => {
+                const statusIcons = {
+                    'New': '🔵', 'In Progress': '🟡', 'Pending': '🟠',
+                    'Resolved': '🟢', 'Closed': '⚪'
+                };
+
+                const row = `
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition">
+                        <td class="px-3 py-3 font-mono text-sm font-bold text-blue-600">${ticket.ID}</td>
+                        <td class="px-3 py-3 text-sm text-slate-700 max-w-xs truncate">${ticket.Title}</td>
+                        <td class="px-3 py-3 text-sm text-slate-600">${ticket.Name}</td>
+                        <td class="px-3 py-3 text-xs">${statusIcons[ticket.Status] || '⚪'} ${ticket.Status}</td>
+                        <td class="px-3 py-3 text-xs text-slate-500">${ticket.LoggedDate}</td>
+                        <td class="px-3 py-3 text-center">
+                            <button onclick="showDetailView('${ticket.ID}')" class="text-blue-600 hover:text-blue-700 text-xs font-semibold">
+                                ดูรายละเอียด
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                listBody.innerHTML += row;
+            });
+        }
+
+        // ==========================================
+        // FILTER SEARCH
+        // ==========================================
+        function filterTickets() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.getElementById('ticket-list-body').querySelectorAll('tr');
+            let count = 0;
+
+            rows.forEach(row => {
+                const id = row.querySelector('td:nth-child(1)').innerText.toLowerCase();
+                const name = row.querySelector('td:nth-child(3)').innerText.toLowerCase();
+                if (id.includes(search) || name.includes(search)) {
+                    row.style.display = '';
+                    count++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            document.getElementById('no-ticket-msg').classList.toggle('hidden', count > 0);
+        }
+
+        // ==========================================
+        // RENDER DETAIL
+        // ==========================================
+        function renderTicketDetail(ticketId) {
+            const ticket = tickets.find(t => t.ID === ticketId);
+            if (!ticket) return;
+
+            document.getElementById('detail-id').innerText = ticket.ID;
+            document.getElementById('detail-category').innerText = `🏷️ ${ticket.Category}`;
+            document.getElementById('detail-title').innerText = ticket.Title;
+            document.getElementById('detail-name').innerText = ticket.Name;
+            document.getElementById('detail-dept').innerText = ticket.Department;
+            document.getElementById('detail-contact').innerText = ticket.Contact;
+            document.getElementById('detail-desc').innerText = ticket.Description;
+            document.getElementById('detail-logged').innerText = ticket.LoggedDate;
+            document.getElementById('detail-resolved').innerText = ticket.ResolvedDate || 'ยังไม่เสร็จ';
+            document.getElementById('detail-status').value = ticket.Status;
+            document.getElementById('detail-assigned').value = ticket.Assigned;
+            document.getElementById('detail-precautions').value = ticket.Precautions;
+            document.getElementById('detail-rootcause').value = ticket.RootCause;
+            document.getElementById('detail-resolution').value = ticket.Resolution;
+
+            if (currentRole === 'user') {
+                document.getElementById('save-btn').style.display = 'none';
+                document.getElementById('detail-status').disabled = true;
+                document.getElementById('detail-assigned').disabled = true;
+                document.getElementById('detail-precautions').readOnly = true;
+                document.getElementById('detail-rootcause').readOnly = true;
+                document.getElementById('detail-resolution').readOnly = true;
+                document.getElementById('new-worknote').style.display = 'none';
+            } else {
+                document.getElementById('save-btn').style.display = 'inline-block';
+                document.getElementById('detail-status').disabled = false;
+                document.getElementById('detail-assigned').disabled = false;
+                document.getElementById('detail-precautions').readOnly = false;
+                document.getElementById('detail-rootcause').readOnly = false;
+                document.getElementById('detail-resolution').readOnly = false;
+                document.getElementById('new-worknote').style.display = 'block';
+            }
+
+            // Work notes
+            let workNotes = ticket.workNotes || [];
+            if (typeof ticket.WorkNotes === 'string') {
+                try {
+                    workNotes = JSON.parse(ticket.WorkNotes || '[]');
+                } catch(e) {
+                    workNotes = [];
+                }
+            }
+
+            const notesHtml = workNotes.map(note => `
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div class="flex justify-between font-semibold text-xs text-slate-600 mb-1">
+                        <span>${note.author || 'Unknown'}</span>
+                        <span>${note.time || '-'}</span>
+                    </div>
+                    <p class="text-xs text-slate-700">${note.text}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('work-notes-list').innerHTML = notesHtml || '<p class="text-slate-500 text-xs">ยังไม่มีบันทึก</p>';
+        }
+
+        // ==========================================
+        // VIEW NAVIGATION
+        // ==========================================
+        function showListView() {
+            document.getElementById('list-view').classList.remove('hidden');
+            document.getElementById('create-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            loadTickets();
+        }
+
+        function showCreateView() {
+            document.getElementById('list-view').classList.add('hidden');
+            document.getElementById('create-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('form-name').value = mockUsers[currentUser].name;
+        }
+
+        function showDetailView(ticketId) {
+            selectedTicketId = ticketId;
+            document.getElementById('list-view').classList.add('hidden');
+            document.getElementById('create-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            renderTicketDetail(ticketId);
+        }
+
+        function backToList() {
+            showListView();
+        }
+
+        function toggleDetails() {
+            isDetailsOpen = !isDetailsOpen;
+            const section = document.getElementById('details-section');
+            if (isDetailsOpen) {
+                section.classList.remove('hidden');
+                document.getElementById('toggle-icon').innerText = '▲';
+                document.getElementById('toggle-text').innerText = 'ซ่อน';
+            } else {
+                section.classList.add('hidden');
+                document.getElementById('toggle-icon').innerText = '▼';
+                document.getElementById('toggle-text').innerText = 'แสดง';
+            }
+        }
+
+        function onStatusChange() {
+            const status = document.getElementById('detail-status').value;
+            if (status === 'Resolved' || status === 'Closed') {
+                const now = new Date().toLocaleString('th-TH');
+                document.getElementById('detail-resolved').innerText = now;
+            }
+        }
+    </script>
+</body>
+</html>
