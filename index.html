@@ -1,558 +1,567 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Service Desk</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Prompt', sans-serif; }
-        .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(37,99,235,.25);
-                   border-top-color:#2563eb; border-radius:50%; animation:spin .8s linear infinite; }
-        .spinner-white { border-color: rgba(255,255,255,.3); border-top-color:#fff; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        textarea[readonly], select:disabled { background:#f8fafc; cursor:not-allowed; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Service Desk</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Prompt', sans-serif; }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(37,99,235,.25); border-top-color:#2563eb; border-radius:50%; animation:spin .8s linear infinite; }
+  .spinner-white { border-color:rgba(255,255,255,.3); border-top-color:#fff; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  textarea[readonly], select:disabled, input[readonly] { background:#f8fafc; cursor:not-allowed; }
+  .inp { width:100%; border:1px solid #cbd5e1; border-radius:.5rem; padding:.5rem .75rem; font-size:.875rem; background:#fff; }
+  .inp:focus { outline:none; box-shadow:0 0 0 2px #3b82f6; }
+  .lbl { display:block; font-size:.75rem; font-weight:600; color:#475569; margin-bottom:.25rem; }
+  .nav-btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.875rem; }
+  .nav-btn.active { background:#eff6ff; color:#1d4ed8; font-weight:600; }
+</style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
 
 <!-- ================= LOGIN ================= -->
 <div id="login-page" class="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6">
-        <div class="text-center">
-            <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">IT</div>
-            <h1 class="text-2xl font-bold text-slate-900">Service Desk Portal</h1>
-            <p class="text-xs text-slate-500 mt-1">ระบบรับแจ้งและจัดการปัญหาไอที</p>
-        </div>
-        <form onsubmit="handleLogin(event)" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">บทบาท (Role)</label>
-                <select id="login-role" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="">-- เลือกบทบาท --</option>
-                    <option value="user">👤 ผู้ใช้งาน (User)</option>
-                    <option value="it">🛠️ เจ้าหน้าที่ IT</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อผู้ใช้</label>
-                <input id="login-user" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน</label>
-                <input id="login-pass" type="password" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-            <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg">
-                <p><strong>ทดสอบ:</strong></p>
-                <p>👤 User: <code>somchai</code> / <code>1234</code></p>
-                <p>🛠️ IT: <code>niran</code> / <code>1234</code></p>
-            </div>
-            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">เข้าสู่ระบบ</button>
-        </form>
+  <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">IT</div>
+      <h1 class="text-2xl font-bold">Service Desk Portal</h1>
+      <p class="text-xs text-slate-500 mt-1">ระบบรับแจ้งและจัดการปัญหาไอที</p>
     </div>
+    <form onsubmit="handleLogin(event)" class="space-y-4">
+      <div><label class="lbl">ชื่อผู้ใช้ (Username)</label><input id="login-user" required autocomplete="username" class="inp"></div>
+      <div><label class="lbl">รหัสผ่าน</label><input id="login-pass" type="password" required autocomplete="current-password" class="inp"></div>
+      <p id="login-error" class="hidden text-sm text-red-600 bg-red-50 p-2 rounded-lg"></p>
+      <button id="login-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex justify-center items-center gap-2">เข้าสู่ระบบ</button>
+      <p class="text-xs text-center text-slate-400">ยังไม่มีบัญชี? กรุณาติดต่อฝ่าย IT เพื่อขอสร้างบัญชี</p>
+    </form>
+  </div>
 </div>
 
 <!-- ================= MAIN APP ================= -->
 <div id="main-app" class="hidden min-h-screen">
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">IT</div>
-                <div>
-                    <h1 class="font-bold text-slate-900 leading-tight">Service Desk Portal</h1>
-                    <p class="text-xs text-slate-500" id="header-role"></p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <span class="text-sm text-slate-600 hidden sm:inline">ยินดีต้อนรับ: <strong id="current-user"></strong></span>
-                <button onclick="handleLogout()" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">ออกจากระบบ</button>
-            </div>
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">IT</div>
+        <div>
+          <h1 class="font-bold leading-tight">Service Desk Portal</h1>
+          <p class="text-xs text-slate-500"><span id="header-role"></span> · <span id="current-user"></span></p>
         </div>
-    </header>
+      </div>
+      <nav class="flex flex-wrap items-center gap-1">
+        <button id="nav-list" onclick="showListView()" class="nav-btn hover:bg-slate-100">📋 รายการแจ้งปัญหา</button>
+        <button id="nav-users" onclick="showUsersView()" class="nav-btn hover:bg-slate-100 hidden">👥 จัดการผู้ใช้</button>
+        <button id="nav-password" onclick="showPasswordView()" class="nav-btn hover:bg-slate-100">🔑 เปลี่ยนรหัสผ่าน</button>
+        <button onclick="handleLogout()" class="nav-btn border border-slate-300 hover:bg-slate-50">ออกจากระบบ</button>
+      </nav>
+    </div>
+  </header>
 
-    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
-        <!-- ===== LIST VIEW ===== -->
-        <section id="list-view" class="space-y-6">
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h2 class="text-xl font-bold text-slate-900" id="list-title">📋 รายการแจ้งปัญหา</h2>
-                    <div class="flex gap-2">
-                        <button onclick="loadTickets()" class="px-4 py-3 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">🔄 รีเฟรช</button>
-                        <button onclick="showCreateView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md">➕ แจ้งปัญหาใหม่</button>
-                    </div>
-                </div>
+    <!-- ===== LIST VIEW ===== -->
+    <section id="list-view" class="space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <h2 class="text-xl font-bold" id="list-title">📋 รายการแจ้งปัญหา</h2>
+          <div class="flex gap-2">
+            <button onclick="loadTickets()" class="px-4 py-3 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">🔄 รีเฟรช</button>
+            <button onclick="showCreateView()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-md">➕ แจ้งปัญหาใหม่</button>
+          </div>
+        </div>
+        <input id="search-input" oninput="renderTicketList()" placeholder="🔍 ค้นหาจากหมายเลข Incident, หัวข้อ หรือชื่อผู้แจ้ง..." class="inp">
+        <div id="loading-list" class="hidden text-center py-8 text-slate-500"><div class="spinner mb-2"></div><p class="text-sm">กำลังโหลดข้อมูล...</p></div>
+        <div id="ticket-table-container" class="overflow-x-auto hidden">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b-2 border-slate-200 bg-slate-50 text-left">
+              <th class="px-3 py-2">Incident ID</th><th class="px-3 py-2">หัวข้อเรื่อง</th><th class="px-3 py-2">ผู้แจ้ง</th>
+              <th class="px-3 py-2">สถานะ</th><th class="px-3 py-2">วันที่แจ้ง</th><th class="px-3 py-2 text-center">ดำเนินการ</th>
+            </tr></thead>
+            <tbody id="ticket-list-body"></tbody>
+          </table>
+        </div>
+        <p id="no-ticket-msg" class="hidden text-center py-8 text-sm text-slate-500">ไม่พบรายการแจ้งปัญหา</p>
+      </div>
+    </section>
 
-                <input id="search-input" oninput="renderTicketList()" placeholder="🔍 ค้นหาจากหมายเลข Incident หรือชื่อผู้แจ้ง..."
-                       class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-
-                <div id="loading-list" class="hidden text-center py-8 text-slate-500">
-                    <div class="spinner mb-2"></div><p class="text-sm">กำลังโหลดข้อมูล...</p>
-                </div>
-
-                <div id="ticket-table-container" class="overflow-x-auto hidden">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b-2 border-slate-200 bg-slate-50 text-left text-slate-700">
-                                <th class="px-3 py-2">Incident ID</th>
-                                <th class="px-3 py-2">หัวข้อเรื่อง</th>
-                                <th class="px-3 py-2">ผู้แจ้ง</th>
-                                <th class="px-3 py-2">สถานะ</th>
-                                <th class="px-3 py-2">วันที่แจ้ง</th>
-                                <th class="px-3 py-2 text-center">ดำเนินการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ticket-list-body"></tbody>
-                    </table>
-                </div>
-
-                <p id="no-ticket-msg" class="hidden text-center py-8 text-sm text-slate-500">ไม่พบรายการแจ้งปัญหา</p>
+    <!-- ===== CREATE VIEW ===== -->
+    <section id="create-view" class="hidden">
+      <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
+          <div><h2 class="text-lg font-semibold">📝 แจ้งปัญหาการใช้งานไอทีใหม่</h2><p class="text-xs text-blue-100">กรอกข้อมูลเพื่อสร้างเรื่องแจ้งปัญหาใหม่</p></div>
+          <button onclick="showListView()" class="text-3xl leading-none hover:opacity-80">✕</button>
+        </div>
+        <form id="create-form" onsubmit="handleCreateTicket(event)" class="p-6 space-y-6">
+          <div>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">1. ข้อมูลผู้แจ้ง</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div><label class="lbl">ชื่อผู้แจ้ง <span class="text-red-500">*</span></label><input id="form-name" required class="inp"></div>
+              <div><label class="lbl">แผนก/สาขา <span class="text-red-500">*</span></label><input id="form-dept" required placeholder="เช่น ฝ่ายบัญชี" class="inp"></div>
+              <div><label class="lbl">เบอร์โทร/อีเมล <span class="text-red-500">*</span></label><input id="form-contact" required placeholder="เช่น 081-xxx-xxxx" class="inp"></div>
             </div>
-        </section>
+          </div>
+          <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. ข้อมูลปัญหา</h3>
+            <div><label class="lbl">ประเภทของเรื่อง <span class="text-red-500">*</span></label>
+              <select id="form-category" required class="inp">
+                <option value="">-- เลือกประเภทปัญหา --</option>
+                <option>อุปกรณ์คอมพิวเตอร์ / จอภาพ / เมาส์ / คีย์บอร์ด</option>
+                <option>โปรแกรมระบบงาน / ERP / Microsoft Office</option>
+                <option>ระบบเครือข่าย / อินเทอร์เน็ต / Wi-Fi / VPN</option>
+                <option>บัญชีผู้ใช้ / สิทธิ์ใช้งาน / ลืมรหัสผ่าน</option>
+                <option>เครื่องพิมพ์ / สแกนเนอร์</option>
+                <option>อื่น ๆ</option>
+              </select></div>
+            <div><label class="lbl">หัวข้อเรื่อง <span class="text-red-500">*</span></label><input id="form-title" required placeholder="เช่น เปิดโปรแกรม ERP ไม่ได้" class="inp"></div>
+            <div><label class="lbl">รายละเอียด <span class="text-red-500">*</span></label>
+              <textarea id="form-desc" required rows="4" placeholder="อาการที่พบ ขั้นตอนก่อนเกิดปัญหา หรือข้อความ Error ที่ปรากฏ" class="inp"></textarea></div>
+          </div>
+          <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <button type="button" onclick="showListView()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">ยกเลิก</button>
+            <button id="submit-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">✓ ส่งคำร้อง</button>
+          </div>
+        </form>
+      </div>
+    </section>
 
-        <!-- ===== CREATE VIEW ===== -->
-        <section id="create-view" class="hidden">
-            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
-                    <div>
-                        <h2 class="text-lg font-semibold">📝 แจ้งปัญหาการใช้งานไอทีใหม่</h2>
-                        <p class="text-xs text-blue-100">กรอกข้อมูลเพื่อสร้างเรื่องแจ้งปัญหาใหม่</p>
-                    </div>
-                    <button onclick="showListView()" class="text-3xl leading-none hover:opacity-80">✕</button>
-                </div>
+    <!-- ===== DETAIL VIEW ===== -->
+    <section id="detail-view" class="hidden space-y-5">
+      <button onclick="showListView()" class="text-blue-600 hover:text-blue-700 font-medium text-sm">← กลับไปยังรายการ</button>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="detail-id" class="bg-blue-100 text-blue-700 font-mono text-sm px-2.5 py-1 rounded-md font-bold"></span>
+            <span id="detail-category" class="bg-slate-100 text-xs px-2.5 py-1 rounded-full"></span>
+            <span id="detail-status-badge" class="bg-slate-100 text-xs px-2.5 py-1 rounded-full"></span>
+          </div>
+          <button id="save-btn" onclick="saveTicket()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">💾 บันทึกข้อมูล</button>
+        </div>
+        <h2 id="detail-title" class="text-lg font-bold"></h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
+          <div><span class="text-slate-400 block">👤 ชื่อผู้แจ้ง</span><span id="detail-name" class="font-semibold"></span></div>
+          <div><span class="text-slate-400 block">🏢 แผนก/สาขา</span><span id="detail-dept" class="font-semibold"></span></div>
+          <div><span class="text-slate-400 block">📞 ข้อมูลติดต่อ</span><span id="detail-contact" class="font-semibold"></span></div>
+        </div>
+        <button onclick="toggleDetails()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded-lg border border-slate-200"><span id="toggle-text">▲ ซ่อนรายละเอียดของงาน</span></button>
+      </div>
 
-                <form id="create-form" onsubmit="handleCreateTicket(event)" class="p-6 space-y-6">
-                    <div>
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">1. ข้อมูลผู้แจ้ง</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">ชื่อผู้แจ้ง <span class="text-red-500">*</span></label>
-                                <input id="form-name" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">แผนก/สาขา <span class="text-red-500">*</span></label>
-                                <input id="form-dept" required placeholder="เช่น ฝ่ายบัญชี" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">เบอร์โทร/อีเมล <span class="text-red-500">*</span></label>
-                                <input id="form-contact" required placeholder="เช่น 081-xxx-xxxx" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. ข้อมูลปัญหา</h3>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">ประเภทของเรื่อง <span class="text-red-500">*</span></label>
-                            <select id="form-category" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="">-- เลือกประเภทปัญหา --</option>
-                                <option>อุปกรณ์คอมพิวเตอร์ / จอภาพ / เมาส์ / คีย์บอร์ด</option>
-                                <option>โปรแกรมระบบงาน / ERP / Microsoft Office</option>
-                                <option>ระบบเครือข่าย / อินเทอร์เน็ต / Wi-Fi / VPN</option>
-                                <option>บัญชีผู้ใช้ / สิทธิ์ใช้งาน / ลืมรหัสผ่าน</option>
-                                <option>เครื่องพิมพ์ / สแกนเนอร์</option>
-                                <option>อื่น ๆ</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">หัวข้อเรื่อง <span class="text-red-500">*</span></label>
-                            <input id="form-title" required placeholder="เช่น เปิดโปรแกรม ERP ไม่ได้" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">รายละเอียด <span class="text-red-500">*</span></label>
-                            <textarea id="form-desc" required rows="4" placeholder="อาการที่พบ ขั้นตอนก่อนเกิดปัญหา หรือข้อความ Error ที่ปรากฏ"
-                                      class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
-                        <button type="button" onclick="showListView()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">ยกเลิก</button>
-                        <button type="submit" id="submit-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">✓ ส่งคำร้อง</button>
-                    </div>
-                </form>
+      <div id="details-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-slate-400 uppercase border-b border-slate-100 pb-2 mb-3">รายละเอียดของเรื่อง</h3>
+            <p id="detail-desc" class="text-sm whitespace-pre-wrap"></p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 class="font-bold text-sm">การวิเคราะห์และแก้ไขปัญหา</h3>
+              <span id="readonly-badge" class="text-xs text-slate-400">🔒 เฉพาะเจ้าหน้าที่ IT แก้ไขได้</span>
             </div>
-        </section>
-
-        <!-- ===== DETAIL VIEW ===== -->
-        <section id="detail-view" class="hidden space-y-5">
-            <button onclick="showListView()" class="text-blue-600 hover:text-blue-700 font-medium text-sm">← กลับไปยังรายการ</button>
-
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span id="detail-id" class="bg-blue-100 text-blue-700 font-mono text-sm px-2.5 py-1 rounded-md font-bold"></span>
-                        <span id="detail-category" class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full"></span>
-                        <span id="detail-status-badge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100"></span>
-                    </div>
-                    <button id="save-btn" onclick="saveTicket()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">💾 บันทึกข้อมูล</button>
-                </div>
-
-                <h2 id="detail-title" class="text-lg font-bold text-slate-900"></h2>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
-                    <div><span class="text-slate-400 block">👤 ชื่อผู้แจ้ง</span><span id="detail-name" class="font-semibold"></span></div>
-                    <div><span class="text-slate-400 block">🏢 แผนก/สาขา</span><span id="detail-dept" class="font-semibold"></span></div>
-                    <div><span class="text-slate-400 block">📞 ข้อมูลติดต่อ</span><span id="detail-contact" class="font-semibold"></span></div>
-                </div>
-
-                <button onclick="toggleDetails()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200">
-                    <span id="toggle-text">▲ ซ่อนรายละเอียดของงาน</span>
-                </button>
+            <div class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+              <label class="lbl !text-amber-800">⚠️ ข้อควรระวัง / ความเสี่ยง</label>
+              <textarea id="detail-precautions" rows="2" class="inp"></textarea>
             </div>
+            <div><label class="lbl">สาเหตุของปัญหา (Root Cause)</label><textarea id="detail-rootcause" rows="2" class="inp"></textarea></div>
+            <div><label class="lbl">วิธีการแก้ไข (Resolution)</label><textarea id="detail-resolution" rows="3" class="inp"></textarea></div>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="font-bold text-sm border-b border-slate-100 pb-2 mb-3">บันทึกเพิ่มเติม (Work Notes)</h3>
+            <div id="work-notes-list" class="space-y-2"></div>
+            <textarea id="new-worknote" rows="2" placeholder="พิมพ์บันทึกใหม่ แล้วกดบันทึกข้อมูล..." class="inp mt-3"></textarea>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
+          <h3 class="text-xs font-bold text-slate-400 uppercase">การจัดการสถานะ</h3>
+          <div><label class="lbl">สถานะงาน</label>
+            <select id="detail-status" onchange="onStatusChange()" class="inp !border-2 !border-blue-500 font-semibold">
+              <option value="New">🔵 New</option><option value="In Progress">🟡 In Progress</option>
+              <option value="Pending">🟠 Pending</option><option value="Resolved">🟢 Resolved</option><option value="Closed">⚪ Closed</option>
+            </select></div>
+          <div><label class="lbl">ผู้รับงาน</label><select id="detail-assigned" class="inp"></select></div>
+          <hr class="border-slate-100">
+          <div class="space-y-2 text-xs">
+            <div><span class="text-slate-400 block">วันและเวลาที่แจ้ง</span><span id="detail-logged" class="font-medium"></span></div>
+            <div><span class="text-slate-400 block">วันและเวลาที่เสร็จสิ้น</span><span id="detail-resolved" class="font-medium text-emerald-600"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-            <div id="details-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="text-xs font-bold text-slate-400 uppercase border-b border-slate-100 pb-2 mb-3">รายละเอียดของเรื่อง</h3>
-                        <p id="detail-desc" class="text-sm text-slate-700 whitespace-pre-wrap"></p>
-                    </div>
+    <!-- ===== USERS VIEW (IT) ===== -->
+    <section id="users-view" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex justify-between items-center gap-2">
+          <h2 class="text-xl font-bold">👥 จัดการผู้ใช้</h2>
+          <button onclick="newUserForm()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">➕ เพิ่มผู้ใช้</button>
+        </div>
+        <input id="user-search" oninput="renderUsers()" placeholder="🔍 ค้นหา Username, ชื่อ หรือแผนก..." class="inp">
+        <div id="loading-users" class="hidden text-center py-6"><div class="spinner"></div></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b-2 border-slate-200 bg-slate-50 text-left">
+              <th class="px-3 py-2">Username</th><th class="px-3 py-2">ชื่อ-นามสกุล</th><th class="px-3 py-2">แผนก</th>
+              <th class="px-3 py-2">สิทธิ์</th><th class="px-3 py-2">สถานะ</th><th class="px-3 py-2 text-center">จัดการ</th>
+            </tr></thead>
+            <tbody id="user-list-body"></tbody>
+          </table>
+        </div>
+      </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                            <h3 class="font-bold text-sm">การวิเคราะห์และแก้ไขปัญหา</h3>
-                            <span id="readonly-badge" class="text-xs text-slate-400">🔒 เฉพาะเจ้าหน้าที่ IT แก้ไขได้</span>
-                        </div>
-                        <div class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
-                            <label class="block text-xs font-bold text-amber-800 mb-1">⚠️ ข้อควรระวัง / ความเสี่ยง</label>
-                            <textarea id="detail-precautions" rows="2" class="w-full border border-amber-200 rounded px-3 py-1.5 text-sm focus:outline-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">สาเหตุของปัญหา (Root Cause)</label>
-                            <textarea id="detail-rootcause" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-600 mb-1">วิธีการแก้ไข (Resolution)</label>
-                            <textarea id="detail-resolution" rows="3" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none"></textarea>
-                        </div>
-                    </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm h-fit">
+        <h3 id="user-form-title" class="font-bold mb-4">➕ เพิ่มผู้ใช้ใหม่</h3>
+        <form id="user-form" onsubmit="handleSaveUser(event)" class="space-y-3">
+          <input type="hidden" id="u-mode" value="new">
+          <div><label class="lbl">Username <span class="text-red-500">*</span></label>
+            <input id="u-username" required placeholder="เช่น somchai.m" class="inp">
+            <p class="text-[11px] text-slate-400 mt-1">a-z, 0-9, จุด, _ หรือ - (3-30 ตัว)</p></div>
+          <div id="u-password-box"><label class="lbl">รหัสผ่านเริ่มต้น <span class="text-red-500">*</span></label>
+            <input id="u-password" type="text" placeholder="อย่างน้อย 6 ตัวอักษร" class="inp"></div>
+          <div><label class="lbl">ชื่อ-นามสกุล <span class="text-red-500">*</span></label><input id="u-fullname" required class="inp"></div>
+          <div><label class="lbl">สิทธิ์การใช้งาน</label>
+            <select id="u-role" class="inp">
+              <option value="user">👤 User — แจ้งปัญหาและติดตามงานของตัวเอง</option>
+              <option value="it">🛠️ IT — จัดการทุกเคส และจัดการผู้ใช้</option>
+            </select></div>
+          <div><label class="lbl">แผนก/สาขา</label><input id="u-dept" class="inp"></div>
+          <div><label class="lbl">เบอร์โทร/อีเมล</label><input id="u-contact" class="inp"></div>
+          <div><label class="lbl">สถานะบัญชี</label>
+            <select id="u-active" class="inp"><option value="Yes">✅ ใช้งาน</option><option value="No">⛔ ระงับการใช้งาน</option></select></div>
+          <div class="flex gap-2 pt-2">
+            <button type="button" onclick="newUserForm()" class="flex-1 py-2 border border-slate-300 rounded-lg text-sm">ล้างฟอร์ม</button>
+            <button id="u-save-btn" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">💾 บันทึก</button>
+          </div>
+        </form>
+      </div>
+    </section>
 
-                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                        <h3 class="font-bold text-sm border-b border-slate-100 pb-2 mb-3">บันทึกเพิ่มเติม (Work Notes)</h3>
-                        <div id="work-notes-list" class="space-y-2"></div>
-                        <textarea id="new-worknote" rows="2" placeholder="พิมพ์บันทึกใหม่ แล้วกดบันทึกข้อมูล..."
-                                  class="w-full border border-slate-300 rounded-lg p-2 text-sm mt-3 focus:outline-none"></textarea>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4 h-fit">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase">การจัดการสถานะ</h3>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">สถานะงาน</label>
-                        <select id="detail-status" onchange="onStatusChange()" class="w-full border-2 border-blue-500 rounded-lg px-3 py-2 text-sm font-semibold bg-white">
-                            <option value="New">🔵 New</option>
-                            <option value="In Progress">🟡 In Progress</option>
-                            <option value="Pending">🟠 Pending</option>
-                            <option value="Resolved">🟢 Resolved</option>
-                            <option value="Closed">⚪ Closed</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">ผู้รับงาน</label>
-                        <select id="detail-assigned" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white">
-                            <option value="">-- ยังไม่มอบหมาย --</option>
-                            <option value="นิรัน ใจดี">นิรัน ใจดี (IT Support)</option>
-                            <option value="สมศักดิ์">สมศักดิ์ (Infrastructure)</option>
-                        </select>
-                    </div>
-                    <hr class="border-slate-100">
-                    <div class="space-y-2 text-xs">
-                        <div><span class="text-slate-400 block">วันและเวลาที่แจ้ง</span><span id="detail-logged" class="font-medium"></span></div>
-                        <div><span class="text-slate-400 block">วันและเวลาที่เสร็จสิ้น</span><span id="detail-resolved" class="font-medium text-emerald-600"></span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+    <!-- ===== CHANGE PASSWORD ===== -->
+    <section id="password-view" class="hidden">
+      <div class="max-w-md mx-auto bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <h2 class="text-lg font-bold mb-4">🔑 เปลี่ยนรหัสผ่าน</h2>
+        <form id="pw-form" onsubmit="handleChangePassword(event)" class="space-y-3">
+          <div><label class="lbl">รหัสผ่านเดิม</label><input id="pw-old" type="password" required class="inp"></div>
+          <div><label class="lbl">รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)</label><input id="pw-new" type="password" required minlength="6" class="inp"></div>
+          <div><label class="lbl">ยืนยันรหัสผ่านใหม่</label><input id="pw-confirm" type="password" required class="inp"></div>
+          <button id="pw-btn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">บันทึกรหัสผ่านใหม่</button>
+        </form>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script>
 // ==========================================
-// CONFIG — ใส่ URL Deploy ของ Apps Script
+// CONFIG — ใส่ Web app URL (ลงท้าย /exec)
 // ==========================================
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoz-jnU6r3drR2RjKWudMjPEor6eWQ4oszemQvhMs918i84xKo7a9KZENzJyOuhaypPQ/exec";
-
-const mockUsers = {
-    somchai: { password: '1234', name: 'สมชาย มั่นคง', role: 'user' },
-    niran:   { password: '1234', name: 'นิรัน ใจดี',   role: 'it'   }
-};
+const API_URL = "https://script.google.com/macros/s/AKfycbxOx4dmggHzaDlDwQNrUJDKSehr__o24we0bQaj-gTiiDpogKDFdx9rb2nsCvzYYXoq0w/exec";
 
 const STATUS_ICON = { 'New':'🔵', 'In Progress':'🟡', 'Pending':'🟠', 'Resolved':'🟢', 'Closed':'⚪' };
-
-let currentUser = null, currentRole = null, tickets = [], selectedTicketId = null, isDetailsOpen = true;
-
-// ==========================================
-// API (ส่งแบบ text/plain = ไม่ติด CORS)
-// ==========================================
-async function apiGet(action) {
-    const res = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=${action}&t=${Date.now()}`);
-    return res.json();
-}
-
-async function apiPost(action, data) {
-    const res = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, data })
-    });
-    return res.json();
-}
-
-// ป้องกันข้อความที่ผู้ใช้พิมพ์ไปแทรกเป็นโค้ด HTML
-function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+let session = null, tickets = [], engineers = [], users = [], selectedTicketId = null, isDetailsOpen = true;
 
 const $ = id => document.getElementById(id);
+const isIT = () => session && session.user.role === 'it';
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function busy(btn, on, label) { btn.disabled = on; if (on) { btn.dataset.l = btn.innerHTML; btn.innerHTML = '<span class="spinner spinner-white"></span> ' + (label || 'กำลังดำเนินการ...'); } else btn.innerHTML = btn.dataset.l; }
+
+// ==========================================
+// API — ทุกคำขอเป็น POST แบบ text/plain และแนบ Token
+// ==========================================
+async function api(action, data = {}) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, data, token: session?.token })
+  });
+  const r = await res.json();
+  if (r.error === 'SESSION_EXPIRED') {
+    alert('⏰ หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่');
+    sessionStorage.removeItem('sd_session'); location.reload();
+    throw new Error('SESSION_EXPIRED');
+  }
+  if (!r.success) throw new Error(r.error || 'เกิดข้อผิดพลาด');
+  return r;
+}
 
 // ==========================================
 // LOGIN / LOGOUT
 // ==========================================
-function handleLogin(e) {
-    e.preventDefault();
-    const role = $('login-role').value;
-    const username = $('login-user').value.trim();
-    const user = mockUsers[username];
-
-    if (!role) return alert('⚠️ กรุณาเลือกบทบาท');
-    if (!user || user.password !== $('login-pass').value) return alert('❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-    if (user.role !== role) return alert('❌ บทบาทไม่ตรงกับบัญชีนี้');
-
-    currentUser = username;
-    currentRole = role;
-    sessionStorage.setItem('sd_user', username);
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = $('login-btn'); busy(btn, true, 'กำลังตรวจสอบ...');
+  $('login-error').classList.add('hidden');
+  try {
+    const r = await api('login', { username: $('login-user').value.trim(), password: $('login-pass').value });
+    session = { token: r.token, user: r.user };
+    sessionStorage.setItem('sd_session', JSON.stringify(session));
     enterApp();
+  } catch (err) {
+    $('login-error').textContent = '❌ ' + err.message;
+    $('login-error').classList.remove('hidden');
+  } finally { busy(btn, false); }
 }
 
 function enterApp() {
-    $('login-page').classList.add('hidden');
-    $('main-app').classList.remove('hidden');
-    $('current-user').innerText = mockUsers[currentUser].name;
-    $('header-role').innerText = currentRole === 'it' ? '🛠️ เจ้าหน้าที่ IT' : '👤 ผู้ใช้งาน';
-    $('list-title').innerText = currentRole === 'it' ? '📋 รายการแจ้งปัญหาทั้งหมด' : '📋 รายการแจ้งปัญหาของคุณ';
-    showListView();
+  $('login-page').classList.add('hidden');
+  $('main-app').classList.remove('hidden');
+  $('current-user').innerText = session.user.name;
+  $('header-role').innerText = isIT() ? '🛠️ เจ้าหน้าที่ IT' : '👤 ผู้ใช้งาน';
+  $('list-title').innerText = isIT() ? '📋 รายการแจ้งปัญหาทั้งหมด' : '📋 รายการแจ้งปัญหาของคุณ';
+  $('nav-users').classList.toggle('hidden', !isIT());
+  showListView();
 }
 
-function handleLogout() {
-    sessionStorage.removeItem('sd_user');
-    location.reload();
+async function handleLogout() {
+  try { await api('logout'); } catch (e) {}
+  sessionStorage.removeItem('sd_session');
+  location.reload();
 }
 
-// จำการ Login ไว้เมื่อกดรีเฟรชหน้า
 window.addEventListener('DOMContentLoaded', () => {
-    const saved = sessionStorage.getItem('sd_user');
-    if (saved && mockUsers[saved]) {
-        currentUser = saved;
-        currentRole = mockUsers[saved].role;
-        enterApp();
-    }
+  const saved = sessionStorage.getItem('sd_session');
+  if (saved) { session = JSON.parse(saved); enterApp(); }
 });
 
 // ==========================================
 // NAVIGATION
 // ==========================================
-function showOnly(id) {
-    ['list-view', 'create-view', 'detail-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
-    window.scrollTo(0, 0);
+function showOnly(id, nav) {
+  ['list-view','create-view','detail-view','users-view','password-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
+  ['nav-list','nav-users','nav-password'].forEach(n => $(n).classList.toggle('active', n === nav));
+  window.scrollTo(0, 0);
 }
-
-function showListView() { showOnly('list-view'); loadTickets(); }
-
+function showListView()     { showOnly('list-view', 'nav-list'); loadTickets(); }
+function showPasswordView() { $('pw-form').reset(); showOnly('password-view', 'nav-password'); }
+function showUsersView()    { showOnly('users-view', 'nav-users'); newUserForm(); loadUsers(); }
 function showCreateView() {
-    $('create-form').reset();
-    $('form-name').value = mockUsers[currentUser].name;
-    showOnly('create-view');
+  $('create-form').reset();
+  $('form-name').value = session.user.name || '';
+  $('form-dept').value = session.user.department || '';
+  $('form-contact').value = session.user.contact || '';
+  showOnly('create-view', 'nav-list');
 }
-
-function showDetailView(id) {
-    selectedTicketId = id;
-    renderTicketDetail(id);
-    showOnly('detail-view');
-}
+function showDetailView(id) { selectedTicketId = id; renderTicketDetail(id); showOnly('detail-view', 'nav-list'); }
 
 // ==========================================
-// LOAD & RENDER LIST
+// TICKETS
 // ==========================================
 async function loadTickets() {
-    $('loading-list').classList.remove('hidden');
-    $('ticket-table-container').classList.add('hidden');
-    $('no-ticket-msg').classList.add('hidden');
-    try {
-        const data = await apiGet('getTickets');
-        if (!data.success) throw new Error(data.error);
-        tickets = (data.tickets || []).map(t => {
-            let notes = [];
-            try { notes = JSON.parse(t.WorkNotes || '[]'); } catch (e) {}
-            return { ...t, workNotes: notes };
-        });
-    } catch (err) {
-        console.error(err);
-        alert('❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message);
-        tickets = [];
-    } finally {
-        $('loading-list').classList.add('hidden');
-        renderTicketList();
-    }
+  $('loading-list').classList.remove('hidden');
+  $('ticket-table-container').classList.add('hidden');
+  $('no-ticket-msg').classList.add('hidden');
+  try {
+    const r = await api('getTickets');
+    engineers = r.engineers || [];
+    tickets = (r.tickets || []).map(t => {
+      let notes = []; try { notes = JSON.parse(t.WorkNotes || '[]'); } catch (e) {}
+      return { ...t, workNotes: notes };
+    });
+  } catch (err) {
+    if (err.message !== 'SESSION_EXPIRED') alert('❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message);
+    tickets = [];
+  } finally {
+    $('loading-list').classList.add('hidden');
+    renderTicketList();
+  }
 }
 
 function renderTicketList() {
-    const q = $('search-input').value.trim().toLowerCase();
-
-    let list = currentRole === 'user' ? tickets.filter(t => t.Requester === currentUser) : tickets;
-    if (q) list = list.filter(t => t.ID.toLowerCase().includes(q) || (t.Name || '').toLowerCase().includes(q));
-
-    $('ticket-list-body').innerHTML = list.map(t => `
-        <tr class="border-b border-slate-200 hover:bg-slate-50 cursor-pointer" onclick="showDetailView('${esc(t.ID)}')">
-            <td class="px-3 py-3 font-mono font-bold text-blue-600 whitespace-nowrap">${esc(t.ID)}</td>
-            <td class="px-3 py-3 max-w-xs truncate">${esc(t.Title)}</td>
-            <td class="px-3 py-3 text-slate-600">${esc(t.Name)}</td>
-            <td class="px-3 py-3 text-xs whitespace-nowrap">${STATUS_ICON[t.Status] || '⚪'} ${esc(t.Status)}</td>
-            <td class="px-3 py-3 text-xs text-slate-500 whitespace-nowrap">${esc(t.LoggedDate)}</td>
-            <td class="px-3 py-3 text-center"><span class="text-blue-600 text-xs font-semibold hover:underline">ดูรายละเอียด</span></td>
-        </tr>`).join('');
-
-    $('ticket-table-container').classList.toggle('hidden', list.length === 0);
-    $('no-ticket-msg').classList.toggle('hidden', list.length > 0);
+  const q = $('search-input').value.trim().toLowerCase();
+  const list = q ? tickets.filter(t => [t.ID, t.Title, t.Name].some(x => String(x).toLowerCase().includes(q))) : tickets;
+  $('ticket-list-body').innerHTML = list.map(t => `
+    <tr class="border-b border-slate-200 hover:bg-slate-50 cursor-pointer" onclick="showDetailView('${esc(t.ID)}')">
+      <td class="px-3 py-3 font-mono font-bold text-blue-600 whitespace-nowrap">${esc(t.ID)}</td>
+      <td class="px-3 py-3 max-w-xs truncate">${esc(t.Title)}</td>
+      <td class="px-3 py-3 text-slate-600">${esc(t.Name)}</td>
+      <td class="px-3 py-3 text-xs whitespace-nowrap">${STATUS_ICON[t.Status] || '⚪'} ${esc(t.Status)}</td>
+      <td class="px-3 py-3 text-xs text-slate-500 whitespace-nowrap">${esc(t.LoggedDate)}</td>
+      <td class="px-3 py-3 text-center"><span class="text-blue-600 text-xs font-semibold hover:underline">ดูรายละเอียด</span></td>
+    </tr>`).join('');
+  $('ticket-table-container').classList.toggle('hidden', list.length === 0);
+  $('no-ticket-msg').classList.toggle('hidden', list.length > 0);
 }
 
-// ==========================================
-// CREATE TICKET
-// ==========================================
 async function handleCreateTicket(e) {
-    e.preventDefault();
-    const btn = $('submit-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner spinner-white"></span> กำลังส่ง...';
-
-    try {
-        const data = await apiPost('addTicket', {
-            name: $('form-name').value.trim(),
-            dept: $('form-dept').value.trim(),
-            contact: $('form-contact').value.trim(),
-            category: $('form-category').value,
-            title: $('form-title').value.trim(),
-            desc: $('form-desc').value.trim(),
-            requester: currentUser
-        });
-        if (!data.success) throw new Error(data.error);
-
-        alert(`✅ แจ้งปัญหาสำเร็จ!\nหมายเลข Incident: ${data.ticketId}`);
-        showListView();
-    } catch (err) {
-        console.error(err);
-        alert('❌ ส่งข้อมูลไม่สำเร็จ: ' + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '✓ ส่งคำร้อง';
-    }
+  e.preventDefault();
+  const btn = $('submit-btn'); busy(btn, true, 'กำลังส่ง...');
+  try {
+    const r = await api('addTicket', {
+      name: $('form-name').value.trim(), dept: $('form-dept').value.trim(), contact: $('form-contact').value.trim(),
+      category: $('form-category').value, title: $('form-title').value.trim(), desc: $('form-desc').value.trim()
+    });
+    alert(`✅ แจ้งปัญหาสำเร็จ!\nหมายเลข Incident: ${r.ticketId}`);
+    showListView();
+  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ส่งข้อมูลไม่สำเร็จ: ' + err.message); }
+  finally { busy(btn, false); }
 }
 
-// ==========================================
-// DETAIL
-// ==========================================
 function renderTicketDetail(id) {
-    const t = tickets.find(x => x.ID === id);
-    if (!t) return;
+  const t = tickets.find(x => x.ID === id); if (!t) return;
+  $('detail-id').innerText = t.ID;
+  $('detail-category').innerText = '🏷️ ' + (t.Category || '-');
+  $('detail-status-badge').innerText = (STATUS_ICON[t.Status] || '⚪') + ' ' + t.Status;
+  $('detail-title').innerText = t.Title;
+  $('detail-name').innerText = t.Name || '-';
+  $('detail-dept').innerText = t.Department || '-';
+  $('detail-contact').innerText = t.Contact || '-';
+  $('detail-desc').innerText = t.Description || '-';
+  $('detail-logged').innerText = t.LoggedDate || '-';
+  $('detail-resolved').innerText = t.ResolvedDate || 'ยังไม่เสร็จสิ้น';
+  $('detail-status').value = t.Status || 'New';
+  $('detail-precautions').value = t.Precautions || '';
+  $('detail-rootcause').value = t.RootCause || '';
+  $('detail-resolution').value = t.Resolution || '';
+  $('new-worknote').value = '';
 
-    $('detail-id').innerText = t.ID;
-    $('detail-category').innerText = '🏷️ ' + (t.Category || '-');
-    $('detail-status-badge').innerText = (STATUS_ICON[t.Status] || '⚪') + ' ' + t.Status;
-    $('detail-title').innerText = t.Title;
-    $('detail-name').innerText = t.Name || '-';
-    $('detail-dept').innerText = t.Department || '-';
-    $('detail-contact').innerText = t.Contact || '-';
-    $('detail-desc').innerText = t.Description || '-';
-    $('detail-logged').innerText = t.LoggedDate || '-';
-    $('detail-resolved').innerText = t.ResolvedDate || 'ยังไม่เสร็จสิ้น';
-    $('detail-status').value = t.Status || 'New';
-    $('detail-assigned').value = t.Assigned || '';
-    $('detail-precautions').value = t.Precautions || '';
-    $('detail-rootcause').value = t.RootCause || '';
-    $('detail-resolution').value = t.Resolution || '';
-    $('new-worknote').value = '';
+  // รายชื่อผู้รับงาน = บัญชีที่มีสิทธิ์ IT
+  const names = [...engineers];
+  if (t.Assigned && !names.includes(t.Assigned)) names.push(t.Assigned);
+  $('detail-assigned').innerHTML = '<option value="">-- ยังไม่มอบหมาย --</option>' +
+    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  $('detail-assigned').value = t.Assigned || '';
 
-    // สิทธิ์: User ดูได้อย่างเดียว / IT แก้ไขได้
-    const isIT = currentRole === 'it';
-    ['detail-precautions', 'detail-rootcause', 'detail-resolution'].forEach(f => $(f).readOnly = !isIT);
-    $('detail-status').disabled = !isIT;
-    $('detail-assigned').disabled = !isIT;
-    $('save-btn').classList.toggle('hidden', !isIT);
-    $('new-worknote').classList.toggle('hidden', !isIT);
-    $('readonly-badge').classList.toggle('hidden', isIT);
+  const it = isIT();
+  ['detail-precautions','detail-rootcause','detail-resolution'].forEach(f => $(f).readOnly = !it);
+  $('detail-status').disabled = !it;
+  $('detail-assigned').disabled = !it;
+  $('save-btn').classList.toggle('hidden', !it);
+  $('new-worknote').classList.toggle('hidden', !it);
+  $('readonly-badge').classList.toggle('hidden', it);
 
-    $('work-notes-list').innerHTML = t.workNotes.length
-        ? t.workNotes.map(n => `
-            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs">
-                <div class="flex justify-between font-semibold text-slate-600 mb-1">
-                    <span>${esc(n.author)}</span><span>${esc(n.time)}</span>
-                </div>
-                <p class="text-slate-700 whitespace-pre-wrap">${esc(n.text)}</p>
-            </div>`).join('')
-        : '<p class="text-slate-400 text-xs">ยังไม่มีบันทึก</p>';
+  $('work-notes-list').innerHTML = t.workNotes.length ? t.workNotes.map(n => `
+    <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs">
+      <div class="flex justify-between font-semibold text-slate-600 mb-1"><span>${esc(n.author)}</span><span>${esc(n.time)}</span></div>
+      <p class="whitespace-pre-wrap">${esc(n.text)}</p>
+    </div>`).join('') : '<p class="text-slate-400 text-xs">ยังไม่มีบันทึก</p>';
 }
 
 function toggleDetails() {
-    isDetailsOpen = !isDetailsOpen;
-    $('details-section').classList.toggle('hidden', !isDetailsOpen);
-    $('toggle-text').innerText = isDetailsOpen ? '▲ ซ่อนรายละเอียดของงาน' : '▼ แสดงรายละเอียดของงาน';
+  isDetailsOpen = !isDetailsOpen;
+  $('details-section').classList.toggle('hidden', !isDetailsOpen);
+  $('toggle-text').innerText = isDetailsOpen ? '▲ ซ่อนรายละเอียดของงาน' : '▼ แสดงรายละเอียดของงาน';
 }
 
 function onStatusChange() {
-    const s = $('detail-status').value;
-    const t = tickets.find(x => x.ID === selectedTicketId);
-    if ((s === 'Resolved' || s === 'Closed') && !t.ResolvedDate) {
-        $('detail-resolved').innerText = new Date().toLocaleString('th-TH') + ' (รอบันทึก)';
-    }
+  const s = $('detail-status').value, t = tickets.find(x => x.ID === selectedTicketId);
+  if ((s === 'Resolved' || s === 'Closed') && !t.ResolvedDate)
+    $('detail-resolved').innerText = new Date().toLocaleString('th-TH') + ' (รอบันทึก)';
+}
+
+async function saveTicket() {
+  const t = tickets.find(x => x.ID === selectedTicketId);
+  if (!t || !isIT()) return alert('⚠️ คุณไม่มีสิทธิ์แก้ไข');
+  const status = $('detail-status').value;
+  const closing = status === 'Resolved' || status === 'Closed';
+  if (closing && (!$('detail-rootcause').value.trim() || !$('detail-resolution').value.trim()))
+    return alert('⚠️ กรุณากรอก "สาเหตุของปัญหา" และ "วิธีการแก้ไข" ก่อนปิดงาน');
+
+  const notes = [...t.workNotes];
+  const newNote = $('new-worknote').value.trim();
+  if (newNote) notes.push({ author: session.user.name, time: new Date().toLocaleString('th-TH'), text: newNote });
+
+  const btn = $('save-btn'); busy(btn, true, 'กำลังบันทึก...');
+  try {
+    await api('updateTicket', {
+      ID: t.ID, Status: status, Assigned: $('detail-assigned').value,
+      Precautions: $('detail-precautions').value, RootCause: $('detail-rootcause').value,
+      Resolution: $('detail-resolution').value,
+      ResolvedDate: closing ? (t.ResolvedDate || new Date().toLocaleString('th-TH')) : t.ResolvedDate,
+      WorkNotes: JSON.stringify(notes)
+    });
+    alert('✅ บันทึกสำเร็จ');
+    await loadTickets();
+    showDetailView(selectedTicketId);
+  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ บันทึกไม่สำเร็จ: ' + err.message); }
+  finally { busy(btn, false); }
 }
 
 // ==========================================
-// SAVE (IT เท่านั้น)
+// USER MANAGEMENT (IT)
 // ==========================================
-async function saveTicket() {
-    const t = tickets.find(x => x.ID === selectedTicketId);
-    if (!t || currentRole !== 'it') return alert('⚠️ คุณไม่มีสิทธิ์แก้ไข');
+async function loadUsers() {
+  $('loading-users').classList.remove('hidden');
+  try { users = (await api('listUsers')).users; }
+  catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); users = []; }
+  finally { $('loading-users').classList.add('hidden'); renderUsers(); }
+}
 
-    const status = $('detail-status').value;
+function renderUsers() {
+  const q = $('user-search').value.trim().toLowerCase();
+  const list = q ? users.filter(u => [u.username, u.name, u.department].some(x => String(x).toLowerCase().includes(q))) : users;
+  $('user-list-body').innerHTML = list.map(u => `
+    <tr class="border-b border-slate-200 hover:bg-slate-50 ${u.active ? '' : 'opacity-50'}">
+      <td class="px-3 py-3 font-mono">${esc(u.username)}${u.username === session.user.username ? ' <span class="text-xs text-blue-600">(คุณ)</span>' : ''}</td>
+      <td class="px-3 py-3">${esc(u.name)}</td>
+      <td class="px-3 py-3 text-slate-600">${esc(u.department || '-')}</td>
+      <td class="px-3 py-3"><span class="text-xs px-2 py-1 rounded-full ${u.role === 'it' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100'}">${u.role === 'it' ? '🛠️ IT' : '👤 User'}</span></td>
+      <td class="px-3 py-3 text-xs">${u.active ? '✅ ใช้งาน' : '⛔ ระงับ'}</td>
+      <td class="px-3 py-3 text-center whitespace-nowrap">
+        <button onclick="editUser('${esc(u.username)}')" class="text-blue-600 text-xs font-semibold hover:underline">แก้ไข</button>
+        <span class="text-slate-300">|</span>
+        <button onclick="resetUserPassword('${esc(u.username)}')" class="text-amber-600 text-xs font-semibold hover:underline">รีเซ็ตรหัส</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6" class="text-center py-6 text-slate-400">ไม่พบผู้ใช้</td></tr>';
+}
 
-    // บังคับกรอกสาเหตุและวิธีแก้ก่อนปิดงาน
-    if ((status === 'Resolved' || status === 'Closed') &&
-        (!$('detail-rootcause').value.trim() || !$('detail-resolution').value.trim())) {
-        return alert('⚠️ กรุณากรอก "สาเหตุของปัญหา" และ "วิธีการแก้ไข" ก่อนปิดงาน');
-    }
+function newUserForm() {
+  $('user-form').reset();
+  $('u-mode').value = 'new';
+  $('u-username').readOnly = false;
+  $('u-password-box').classList.remove('hidden');
+  $('u-password').required = true;
+  $('user-form-title').innerText = '➕ เพิ่มผู้ใช้ใหม่';
+}
 
-    const notes = [...t.workNotes];
-    const newNote = $('new-worknote').value.trim();
-    if (newNote) notes.push({ author: mockUsers[currentUser].name, time: new Date().toLocaleString('th-TH'), text: newNote });
+function editUser(username) {
+  const u = users.find(x => x.username === username); if (!u) return;
+  $('u-mode').value = 'edit';
+  $('u-username').value = u.username; $('u-username').readOnly = true;
+  $('u-password-box').classList.add('hidden'); $('u-password').required = false;
+  $('u-fullname').value = u.name; $('u-role').value = u.role;
+  $('u-dept').value = u.department; $('u-contact').value = u.contact;
+  $('u-active').value = u.active ? 'Yes' : 'No';
+  $('user-form-title').innerText = '✏️ แก้ไขผู้ใช้: ' + u.username;
+  window.scrollTo(0, 0);
+}
 
-    let resolvedDate = t.ResolvedDate || '';
-    if ((status === 'Resolved' || status === 'Closed') && !resolvedDate) resolvedDate = new Date().toLocaleString('th-TH');
+async function handleSaveUser(e) {
+  e.preventDefault();
+  const btn = $('u-save-btn'); busy(btn, true, 'กำลังบันทึก...');
+  try {
+    const r = await api('saveUser', {
+      isNew: $('u-mode').value === 'new',
+      username: $('u-username').value.trim(), password: $('u-password').value,
+      fullName: $('u-fullname').value.trim(), role: $('u-role').value,
+      department: $('u-dept').value.trim(), contact: $('u-contact').value.trim(), active: $('u-active').value
+    });
+    alert('✅ ' + r.message);
+    newUserForm(); loadUsers();
+  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+  finally { busy(btn, false); }
+}
 
-    const btn = $('save-btn');
-    btn.disabled = true;
-    btn.innerText = 'กำลังบันทึก...';
+async function resetUserPassword(username) {
+  const pw = prompt(`กำหนดรหัสผ่านใหม่ให้ "${username}" (อย่างน้อย 6 ตัวอักษร)`);
+  if (pw === null) return;
+  try {
+    await api('resetPassword', { username, newPassword: pw });
+    alert(`✅ รีเซ็ตรหัสผ่านของ ${username} เรียบร้อย\nกรุณาแจ้งรหัสใหม่ให้ผู้ใช้ และให้เปลี่ยนรหัสหลังเข้าสู่ระบบ`);
+  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+}
 
-    try {
-        const data = await apiPost('updateTicket', {
-            ID: t.ID,
-            Status: status,
-            Assigned: $('detail-assigned').value,
-            Precautions: $('detail-precautions').value,
-            RootCause: $('detail-rootcause').value,
-            Resolution: $('detail-resolution').value,
-            ResolvedDate: resolvedDate,
-            WorkNotes: JSON.stringify(notes)
-        });
-        if (!data.success) throw new Error(data.error);
-
-        alert('✅ บันทึกสำเร็จ');
-        await loadTickets();
-        showDetailView(selectedTicketId);
-    } catch (err) {
-        console.error(err);
-        alert('❌ บันทึกไม่สำเร็จ: ' + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = '💾 บันทึกข้อมูล';
-    }
+// ==========================================
+// CHANGE OWN PASSWORD
+// ==========================================
+async function handleChangePassword(e) {
+  e.preventDefault();
+  if ($('pw-new').value !== $('pw-confirm').value) return alert('⚠️ รหัสผ่านใหม่ทั้ง 2 ช่องไม่ตรงกัน');
+  const btn = $('pw-btn'); busy(btn, true, 'กำลังบันทึก...');
+  try {
+    await api('changePassword', { oldPassword: $('pw-old').value, newPassword: $('pw-new').value });
+    alert('✅ เปลี่ยนรหัสผ่านเรียบร้อย');
+    showListView();
+  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+  finally { busy(btn, false); }
 }
 </script>
 </body>
