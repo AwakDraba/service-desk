@@ -17,6 +17,7 @@
   .lbl { display:block; font-size:.75rem; font-weight:600; color:#475569; margin-bottom:.25rem; }
   .nav-btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.875rem; }
   .nav-btn.active { background:#eff6ff; color:#1d4ed8; font-weight:600; }
+  .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
@@ -41,7 +42,7 @@
 
 <!-- ================= MAIN APP ================= -->
 <div id="main-app" class="hidden min-h-screen">
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">IT</div>
@@ -52,6 +53,7 @@
       </div>
       <nav class="flex flex-wrap items-center gap-1">
         <button id="nav-list" onclick="showListView()" class="nav-btn hover:bg-slate-100">📋 รายการแจ้งปัญหา</button>
+        <button id="nav-kb" onclick="showKBView()" class="nav-btn hover:bg-slate-100">💡 แก้ปัญหาเบื้องต้น</button>
         <button id="nav-users" onclick="showUsersView()" class="nav-btn hover:bg-slate-100 hidden">👥 จัดการผู้ใช้</button>
         <button id="nav-password" onclick="showPasswordView()" class="nav-btn hover:bg-slate-100">🔑 เปลี่ยนรหัสผ่าน</button>
         <button onclick="handleLogout()" class="nav-btn border border-slate-300 hover:bg-slate-50">ออกจากระบบ</button>
@@ -92,6 +94,10 @@
         <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
           <div><h2 class="text-lg font-semibold">📝 แจ้งปัญหาการใช้งานไอทีใหม่</h2><p class="text-xs text-blue-100">กรอกข้อมูลเพื่อสร้างเรื่องแจ้งปัญหาใหม่</p></div>
           <button onclick="showListView()" class="text-3xl leading-none hover:opacity-80">✕</button>
+        </div>
+        <div class="mx-6 mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm flex flex-wrap items-center justify-between gap-2">
+          <span>💡 ปัญหาบางอย่างแก้ได้เองภายในไม่กี่นาที ลองดูคู่มือก่อนแจ้งได้</span>
+          <button type="button" onclick="showKBView()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold">ดูวิธีแก้ปัญหาเบื้องต้น</button>
         </div>
         <form id="create-form" onsubmit="handleCreateTicket(event)" class="p-6 space-y-6">
           <div>
@@ -188,6 +194,26 @@
       </div>
     </section>
 
+    <!-- ===== KB VIEW (แก้ปัญหาเบื้องต้น) ===== -->
+    <section id="kb-view" class="hidden space-y-5">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div>
+            <h2 class="text-xl font-bold">💡 แก้ปัญหาเบื้องต้น</h2>
+            <p class="text-xs text-slate-500">คู่มือแก้ปัญหาที่พบบ่อย ลองทำตามก่อนแจ้งปัญหา หากยังแก้ไม่ได้ค่อยกด "แจ้งปัญหาใหม่"</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="loadKB()" class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">🔄 รีเฟรช</button>
+            <button id="kb-add-btn" onclick="openKBForm()" class="hidden px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">➕ เพิ่มวิธีแก้ปัญหา</button>
+          </div>
+        </div>
+        <input id="kb-search" oninput="renderKB()" placeholder="🔍 ค้นหาจากชื่อเรื่องหรืออาการ เช่น ปริ้นไม่ออก, Wi-Fi..." class="inp">
+      </div>
+      <div id="loading-kb" class="hidden text-center py-8"><div class="spinner"></div></div>
+      <div id="kb-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      <p id="kb-empty" class="hidden text-center py-10 text-sm text-slate-500 bg-white rounded-xl border border-slate-200">ยังไม่มีคู่มือแก้ปัญหา</p>
+    </section>
+
     <!-- ===== USERS VIEW (IT) ===== -->
     <section id="users-view" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
@@ -207,7 +233,6 @@
           </table>
         </div>
       </div>
-
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm h-fit">
         <h3 id="user-form-title" class="font-bold mb-4">➕ เพิ่มผู้ใช้ใหม่</h3>
         <form id="user-form" onsubmit="handleSaveUser(event)" class="space-y-3">
@@ -250,14 +275,69 @@
   </main>
 </div>
 
+<!-- ===== MODAL: อ่านคู่มือ (PDF) ===== -->
+<div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-2 sm:p-6" onclick="if(event.target===this) closePDF()">
+  <div class="bg-white rounded-xl w-full max-w-5xl h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between gap-2 px-4 py-3 border-b">
+      <div class="min-w-0">
+        <p id="pdf-id" class="text-xs font-mono text-blue-600"></p>
+        <h3 id="pdf-title" class="font-bold truncate"></h3>
+      </div>
+      <div class="flex gap-2 shrink-0">
+        <a id="pdf-newtab" target="_blank" rel="noopener" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-xs">↗ เปิดแท็บใหม่ / ดาวน์โหลด</a>
+        <button onclick="closePDF()" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs">✕ ปิด</button>
+      </div>
+    </div>
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 min-h-0">
+      <div class="lg:col-span-1 p-4 overflow-y-auto border-b lg:border-b-0 lg:border-r text-sm space-y-4 max-h-48 lg:max-h-none">
+        <div><p class="lbl">🩺 อาการเบื้องต้น</p><p id="pdf-symptoms" class="whitespace-pre-wrap text-slate-700"></p></div>
+        <div><p class="lbl">🛠️ วิธีการดำเนินการ</p><p id="pdf-steps" class="whitespace-pre-wrap text-slate-700"></p></div>
+        <div class="p-3 bg-blue-50 rounded-lg text-xs">ทำตามแล้วยังไม่หาย?
+          <button onclick="closePDF(); showCreateView();" class="block mt-2 w-full py-2 bg-blue-600 text-white rounded-lg font-semibold">➕ แจ้งปัญหาใหม่</button></div>
+      </div>
+      <iframe id="pdf-frame" class="lg:col-span-2 w-full h-full min-h-[50vh]" allow="autoplay"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: ฟอร์มเพิ่ม/แก้ไข KB (IT) ===== -->
+<div id="kb-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
+    <div class="bg-blue-600 text-white px-5 py-3 flex justify-between items-center sticky top-0">
+      <h3 id="kb-form-title" class="font-semibold">➕ เพิ่มวิธีแก้ปัญหา</h3>
+      <button onclick="closeKBForm()" class="text-2xl leading-none">✕</button>
+    </div>
+    <form id="kb-form" onsubmit="handleSaveKB(event)" class="p-5 space-y-4">
+      <input type="hidden" id="kb-id">
+      <div><label class="lbl">1. ชื่อเรื่อง <span class="text-red-500">*</span></label>
+        <input id="kb-title" required placeholder="เช่น สั่งพิมพ์แล้วเครื่องพิมพ์ไม่ทำงาน" class="inp"></div>
+      <div><label class="lbl">2. อาการเบื้องต้น <span class="text-red-500">*</span></label>
+        <textarea id="kb-symptoms" required rows="3" placeholder="เช่น กดสั่งพิมพ์แล้วงานค้างในคิว / ขึ้นข้อความ Printer Offline" class="inp"></textarea></div>
+      <div><label class="lbl">3. วิธีการดำเนินการ (สรุปสั้น ๆ) <span class="text-red-500">*</span></label>
+        <textarea id="kb-steps" required rows="5" placeholder="1. ตรวจสอบสายไฟและสาย LAN&#10;2. ปิด-เปิดเครื่องพิมพ์&#10;3. ลบงานค้างในคิว แล้วสั่งพิมพ์ใหม่" class="inp"></textarea></div>
+      <div><label class="lbl">4. ไฟล์คู่มือ PDF <span id="kb-file-req" class="text-red-500">*</span></label>
+        <input id="kb-file" type="file" accept="application/pdf,.pdf" class="inp file:mr-3 file:px-3 file:py-1 file:border-0 file:rounded file:bg-blue-50 file:text-blue-700">
+        <p id="kb-current-file" class="text-xs text-slate-500 mt-1"></p>
+        <p class="text-[11px] text-slate-400">รองรับเฉพาะ .pdf ขนาดไม่เกิน 10 MB</p></div>
+      <div><label class="lbl">การแสดงผล</label>
+        <select id="kb-active" class="inp"><option value="Yes">✅ เผยแพร่ (User มองเห็น)</option><option value="No">🙈 ซ่อน (เฉพาะ IT เห็น)</option></select></div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button" onclick="closeKBForm()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm">ยกเลิก</button>
+        <button id="kb-save-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2">💾 บันทึก</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 // ==========================================
 // CONFIG — ใส่ Web app URL (ลงท้าย /exec)
 // ==========================================
-const API_URL = "https://script.google.com/macros/s/AKfycbyXlI_5NuraMzz38eAxwbWZc3AKF-EjpDkqY_iSsGO6ASFR46Do3xazsqp4nZMLFhpjig/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwqNg2JFwvq_EDmHeJSMa8hbDac21Xsv1a-83uCarQst3t74ph5icQ8iUpEF-XduEnS-A/exec";
+const MAX_PDF_MB = 10;
 
 const STATUS_ICON = { 'New':'🔵', 'In Progress':'🟡', 'Pending':'🟠', 'Resolved':'🟢', 'Closed':'⚪' };
-let session = null, tickets = [], engineers = [], users = [], selectedTicketId = null, isDetailsOpen = true;
+let session = null, tickets = [], engineers = [], users = [], kbItems = [], selectedTicketId = null, isDetailsOpen = true;
 
 const $ = id => document.getElementById(id);
 const isIT = () => session && session.user.role === 'it';
@@ -265,7 +345,7 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 function busy(btn, on, label) { btn.disabled = on; if (on) { btn.dataset.l = btn.innerHTML; btn.innerHTML = '<span class="spinner spinner-white"></span> ' + (label || 'กำลังดำเนินการ...'); } else btn.innerHTML = btn.dataset.l; }
 
 // ==========================================
-// API — ทุกคำขอเป็น POST แบบ text/plain และแนบ Token
+// API
 // ==========================================
 async function api(action, data = {}) {
   const res = await fetch(API_URL, {
@@ -282,6 +362,7 @@ async function api(action, data = {}) {
   if (!r.success) throw new Error(r.error || 'เกิดข้อผิดพลาด');
   return r;
 }
+const showErr = (err, prefix = '❌ ') => { if (err.message !== 'SESSION_EXPIRED') alert(prefix + err.message); };
 
 // ==========================================
 // LOGIN / LOGOUT
@@ -308,6 +389,7 @@ function enterApp() {
   $('header-role').innerText = isIT() ? '🛠️ เจ้าหน้าที่ IT' : '👤 ผู้ใช้งาน';
   $('list-title').innerText = isIT() ? '📋 รายการแจ้งปัญหาทั้งหมด' : '📋 รายการแจ้งปัญหาของคุณ';
   $('nav-users').classList.toggle('hidden', !isIT());
+  $('kb-add-btn').classList.toggle('hidden', !isIT());
   showListView();
 }
 
@@ -321,16 +403,18 @@ window.addEventListener('DOMContentLoaded', () => {
   const saved = sessionStorage.getItem('sd_session');
   if (saved) { session = JSON.parse(saved); enterApp(); }
 });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePDF(); closeKBForm(); } });
 
 // ==========================================
 // NAVIGATION
 // ==========================================
 function showOnly(id, nav) {
-  ['list-view','create-view','detail-view','users-view','password-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
-  ['nav-list','nav-users','nav-password'].forEach(n => $(n).classList.toggle('active', n === nav));
+  ['list-view','create-view','detail-view','kb-view','users-view','password-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
+  ['nav-list','nav-kb','nav-users','nav-password'].forEach(n => $(n).classList.toggle('active', n === nav));
   window.scrollTo(0, 0);
 }
 function showListView()     { showOnly('list-view', 'nav-list'); loadTickets(); }
+function showKBView()       { showOnly('kb-view', 'nav-kb'); loadKB(); }
 function showPasswordView() { $('pw-form').reset(); showOnly('password-view', 'nav-password'); }
 function showUsersView()    { showOnly('users-view', 'nav-users'); newUserForm(); loadUsers(); }
 function showCreateView() {
@@ -356,13 +440,8 @@ async function loadTickets() {
       let notes = []; try { notes = JSON.parse(t.WorkNotes || '[]'); } catch (e) {}
       return { ...t, workNotes: notes };
     });
-  } catch (err) {
-    if (err.message !== 'SESSION_EXPIRED') alert('❌ โหลดข้อมูลไม่สำเร็จ: ' + err.message);
-    tickets = [];
-  } finally {
-    $('loading-list').classList.add('hidden');
-    renderTicketList();
-  }
+  } catch (err) { showErr(err, '❌ โหลดข้อมูลไม่สำเร็จ: '); tickets = []; }
+  finally { $('loading-list').classList.add('hidden'); renderTicketList(); }
 }
 
 function renderTicketList() {
@@ -391,7 +470,7 @@ async function handleCreateTicket(e) {
     });
     alert(`✅ แจ้งปัญหาสำเร็จ!\nหมายเลข Incident: ${r.ticketId}`);
     showListView();
-  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ส่งข้อมูลไม่สำเร็จ: ' + err.message); }
+  } catch (err) { showErr(err, '❌ ส่งข้อมูลไม่สำเร็จ: '); }
   finally { busy(btn, false); }
 }
 
@@ -413,7 +492,6 @@ function renderTicketDetail(id) {
   $('detail-resolution').value = t.Resolution || '';
   $('new-worknote').value = '';
 
-  // รายชื่อผู้รับงาน = บัญชีที่มีสิทธิ์ IT
   const names = [...engineers];
   if (t.Assigned && !names.includes(t.Assigned)) names.push(t.Assigned);
   $('detail-assigned').innerHTML = '<option value="">-- ยังไม่มอบหมาย --</option>' +
@@ -471,8 +549,113 @@ async function saveTicket() {
     alert('✅ บันทึกสำเร็จ');
     await loadTickets();
     showDetailView(selectedTicketId);
-  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ บันทึกไม่สำเร็จ: ' + err.message); }
+  } catch (err) { showErr(err, '❌ บันทึกไม่สำเร็จ: '); }
   finally { busy(btn, false); }
+}
+
+// ==========================================
+// แก้ปัญหาเบื้องต้น (KB)
+// ==========================================
+async function loadKB() {
+  $('loading-kb').classList.remove('hidden');
+  $('kb-list').innerHTML = ''; $('kb-empty').classList.add('hidden');
+  try { kbItems = (await api('listKB')).items || []; }
+  catch (err) { showErr(err, '❌ โหลดคู่มือไม่สำเร็จ: '); kbItems = []; }
+  finally { $('loading-kb').classList.add('hidden'); renderKB(); }
+}
+
+function renderKB() {
+  const q = $('kb-search').value.trim().toLowerCase();
+  const list = q ? kbItems.filter(k => [k.id, k.title, k.symptoms, k.steps].some(x => String(x).toLowerCase().includes(q))) : kbItems;
+  const it = isIT();
+  $('kb-list').innerHTML = list.map(k => `
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition ${k.active ? '' : 'opacity-60 border-dashed'}">
+      <div class="flex justify-between items-start gap-2">
+        <span class="text-xs font-mono text-blue-600">${esc(k.id)}</span>
+        ${k.active ? '' : '<span class="text-[11px] px-2 py-0.5 bg-slate-200 rounded-full">🙈 ซ่อนอยู่</span>'}
+      </div>
+      <h3 class="font-bold leading-snug">📄 ${esc(k.title)}</h3>
+      <div class="text-xs"><span class="font-semibold text-slate-500">อาการ:</span>
+        <p class="line-clamp-2 text-slate-600 whitespace-pre-wrap">${esc(k.symptoms)}</p></div>
+      <div class="mt-auto pt-2 flex flex-wrap gap-2">
+        <button onclick="openPDF('${esc(k.id)}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">📖 อ่านวิธีแก้ไข</button>
+        ${it ? `<button onclick="openKBForm('${esc(k.id)}')" class="px-3 py-2 border border-slate-300 hover:bg-slate-50 rounded-lg text-sm">✏️</button>
+                <button onclick="deleteKBItem('${esc(k.id)}')" class="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm">🗑️</button>` : ''}
+      </div>
+      ${it ? `<p class="text-[11px] text-slate-400">แก้ไขล่าสุด: ${esc(k.updatedBy)} · ${esc(k.updatedDate)}</p>` : ''}
+    </div>`).join('');
+  $('kb-empty').classList.toggle('hidden', list.length > 0);
+}
+
+// ----- เปิดอ่าน PDF -----
+function openPDF(id) {
+  const k = kbItems.find(x => x.id === id); if (!k) return;
+  $('pdf-id').innerText = k.id;
+  $('pdf-title').innerText = k.title;
+  $('pdf-symptoms').innerText = k.symptoms || '-';
+  $('pdf-steps').innerText = k.steps || '-';
+  $('pdf-frame').src = `https://drive.google.com/file/d/${encodeURIComponent(k.fileId)}/preview`;
+  $('pdf-newtab').href = `https://drive.google.com/file/d/${encodeURIComponent(k.fileId)}/view`;
+  $('pdf-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closePDF() {
+  $('pdf-modal').classList.add('hidden');
+  $('pdf-frame').src = 'about:blank';
+  document.body.style.overflow = '';
+}
+
+// ----- ฟอร์มเพิ่ม/แก้ไข (IT) -----
+function openKBForm(id) {
+  $('kb-form').reset();
+  const k = id ? kbItems.find(x => x.id === id) : null;
+  $('kb-id').value = k ? k.id : '';
+  $('kb-form-title').innerText = k ? '✏️ แก้ไข ' + k.id : '➕ เพิ่มวิธีแก้ปัญหา';
+  $('kb-title').value = k ? k.title : '';
+  $('kb-symptoms').value = k ? k.symptoms : '';
+  $('kb-steps').value = k ? k.steps : '';
+  $('kb-active').value = k && !k.active ? 'No' : 'Yes';
+  $('kb-file-req').classList.toggle('hidden', !!k);
+  $('kb-current-file').innerText = k ? `ไฟล์ปัจจุบัน: ${k.fileName || k.fileId} (เลือกไฟล์ใหม่ถ้าต้องการแทนที่)` : '';
+  $('kb-modal').classList.remove('hidden');
+}
+function closeKBForm() { $('kb-modal').classList.add('hidden'); }
+
+function readFileBase64(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1]);
+    fr.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    fr.readAsDataURL(file);
+  });
+}
+
+async function handleSaveKB(e) {
+  e.preventDefault();
+  const id = $('kb-id').value;
+  const f = $('kb-file').files[0];
+  if (!id && !f) return alert('⚠️ กรุณาแนบไฟล์ PDF');
+  if (f) {
+    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) return alert('⚠️ รองรับเฉพาะไฟล์ PDF เท่านั้น');
+    if (f.size > MAX_PDF_MB * 1024 * 1024) return alert(`⚠️ ไฟล์ต้องมีขนาดไม่เกิน ${MAX_PDF_MB} MB`);
+  }
+  const btn = $('kb-save-btn'); busy(btn, true, f ? 'กำลังอัปโหลด...' : 'กำลังบันทึก...');
+  try {
+    const r = await api('saveKB', {
+      id, title: $('kb-title').value.trim(), symptoms: $('kb-symptoms').value.trim(),
+      steps: $('kb-steps').value.trim(), active: $('kb-active').value,
+      file: f ? { name: f.name, mime: 'application/pdf', data: await readFileBase64(f) } : null
+    });
+    alert('✅ ' + r.message);
+    closeKBForm(); loadKB();
+  } catch (err) { showErr(err); }
+  finally { busy(btn, false); }
+}
+
+async function deleteKBItem(id) {
+  const k = kbItems.find(x => x.id === id);
+  if (!confirm(`ลบ "${k.title}" ?\n(ไฟล์ PDF จะถูกย้ายไปถังขยะของ Google Drive)\n\nถ้าแค่ไม่อยากให้ User เห็น แนะนำใช้ "ซ่อน" แทน`)) return;
+  try { await api('deleteKB', { id }); loadKB(); } catch (err) { showErr(err); }
 }
 
 // ==========================================
@@ -481,7 +664,7 @@ async function saveTicket() {
 async function loadUsers() {
   $('loading-users').classList.remove('hidden');
   try { users = (await api('listUsers')).users; }
-  catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); users = []; }
+  catch (err) { showErr(err); users = []; }
   finally { $('loading-users').classList.add('hidden'); renderUsers(); }
 }
 
@@ -536,7 +719,7 @@ async function handleSaveUser(e) {
     });
     alert('✅ ' + r.message);
     newUserForm(); loadUsers();
-  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+  } catch (err) { showErr(err); }
   finally { busy(btn, false); }
 }
 
@@ -546,7 +729,7 @@ async function resetUserPassword(username) {
   try {
     await api('resetPassword', { username, newPassword: pw });
     alert(`✅ รีเซ็ตรหัสผ่านของ ${username} เรียบร้อย\nกรุณาแจ้งรหัสใหม่ให้ผู้ใช้ และให้เปลี่ยนรหัสหลังเข้าสู่ระบบ`);
-  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+  } catch (err) { showErr(err); }
 }
 
 // ==========================================
@@ -560,7 +743,7 @@ async function handleChangePassword(e) {
     await api('changePassword', { oldPassword: $('pw-old').value, newPassword: $('pw-new').value });
     alert('✅ เปลี่ยนรหัสผ่านเรียบร้อย');
     showListView();
-  } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('❌ ' + err.message); }
+  } catch (err) { showErr(err); }
   finally { busy(btn, false); }
 }
 </script>
