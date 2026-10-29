@@ -8,26 +8,38 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   body { font-family: 'Prompt', sans-serif; }
-  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(37,99,235,.25); border-top-color:#2563eb; border-radius:50%; animation:spin .8s linear infinite; }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(27, 61, 136, 0.25); border-top-color:#0c307e; border-radius:50%; animation:spin .8s linear infinite; }
   .spinner-white { border-color:rgba(255,255,255,.3); border-top-color:#fff; }
   @keyframes spin { to { transform: rotate(360deg); } }
   textarea[readonly], select:disabled, input[readonly] { background:#f8fafc; cursor:not-allowed; }
   .inp { width:100%; border:1px solid #cbd5e1; border-radius:.5rem; padding:.5rem .75rem; font-size:.875rem; background:#fff; }
-  .inp:focus { outline:none; box-shadow:0 0 0 2px #3b82f6; }
+  .inp:focus { outline:none; box-shadow:0 0 0 2px #214c91; }
   .lbl { display:block; font-size:.75rem; font-weight:600; color:#475569; margin-bottom:.25rem; }
   .nav-btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.875rem; }
   .nav-btn.active { background:#eff6ff; color:#1d4ed8; font-weight:600; }
+  .trend-bar { transition: opacity .15s; } .trend-bar:hover { opacity:.75; }
+  .rank-row { transition: background .15s; }
+  .line-clamp-4 { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+  .create-wrap { max-width:48rem; }
+  .create-wrap.with-tip { max-width:72rem; }
+  #kb-tip { position:fixed; left:0; right:0; bottom:0; z-index:40; max-height:65vh; animation:tipUp .25s ease-out; }
+  @keyframes tipUp { from { transform:translateY(30px); opacity:0; } to { transform:none; opacity:1; } }
+  @media (min-width:1024px) {
+    .create-wrap.with-tip { display:grid; grid-template-columns:minmax(0,1fr) 22rem; gap:1.5rem; align-items:start; }
+    #kb-tip { position:sticky; top:5rem; left:auto; right:auto; bottom:auto; max-height:calc(100vh - 7rem); animation:tipIn .25s ease-out; }
+    @keyframes tipIn { from { transform:translateX(20px); opacity:0; } to { transform:none; opacity:1; } }
+  }
   .line-clamp-2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
 
 <!-- ================= LOGIN ================= -->
-<div id="login-page" class="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
+<div id="login-page" class="min-h-screen bg-gradient-to-br from-blue-400 to-blue-650 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full space-y-6">
     <div class="text-center">
       <div class="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">IT</div>
-      <h1 class="text-2xl font-bold">Service Desk Portal</h1>
+      <h1 class="text-2xl font-bold">Service Desk</h1>
       <p class="text-xs text-slate-500 mt-1">ระบบรับแจ้งและจัดการปัญหาไอที</p>
     </div>
     <form onsubmit="handleLogin(event)" class="space-y-4">
@@ -35,7 +47,7 @@
       <div><label class="lbl">รหัสผ่าน</label><input id="login-pass" type="password" required autocomplete="current-password" class="inp"></div>
       <p id="login-error" class="hidden text-sm text-red-600 bg-red-50 p-2 rounded-lg"></p>
       <button id="login-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex justify-center items-center gap-2">เข้าสู่ระบบ</button>
-      <p class="text-xs text-center text-slate-400">ยังไม่มีบัญชี? กรุณาติดต่อฝ่าย IT เพื่อขอสร้างบัญชี</p>
+      <p class="text-xs text-center text-slate-400">ยังไม่มีบัญชี ? กรุณาติดต่อฝ่าย IT เพื่อขอสร้างบัญชี</p>
     </form>
   </div>
 </div>
@@ -53,6 +65,7 @@
       </div>
       <nav class="flex flex-wrap items-center gap-1">
         <button id="nav-list" onclick="showListView()" class="nav-btn hover:bg-slate-100">📋 รายการแจ้งปัญหา</button>
+        <button id="nav-dashboard" onclick="showDashboardView()" class="nav-btn hover:bg-slate-100 hidden">📊 Dashboard</button>
         <button id="nav-kb" onclick="showKBView()" class="nav-btn hover:bg-slate-100">💡 แก้ปัญหาเบื้องต้น</button>
         <button id="nav-users" onclick="showUsersView()" class="nav-btn hover:bg-slate-100 hidden">👥 จัดการผู้ใช้</button>
         <button id="nav-password" onclick="showPasswordView()" class="nav-btn hover:bg-slate-100">🔑 เปลี่ยนรหัสผ่าน</button>
@@ -90,7 +103,8 @@
 
     <!-- ===== CREATE VIEW ===== -->
     <section id="create-view" class="hidden">
-      <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div id="create-wrap" class="create-wrap mx-auto">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="bg-blue-600 px-6 py-4 text-white flex justify-between items-center">
           <div><h2 class="text-lg font-semibold">📝 แจ้งปัญหาการใช้งานไอทีใหม่</h2><p class="text-xs text-blue-100">กรอกข้อมูลเพื่อสร้างเรื่องแจ้งปัญหาใหม่</p></div>
           <button onclick="showListView()" class="text-3xl leading-none hover:opacity-80">✕</button>
@@ -104,22 +118,14 @@
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">1. ข้อมูลผู้แจ้ง</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div><label class="lbl">ชื่อผู้แจ้ง <span class="text-red-500">*</span></label><input id="form-name" required class="inp"></div>
-              <div><label class="lbl">แผนก/สาขา <span class="text-red-500">*</span></label><input id="form-dept" required placeholder="เช่น ฝ่ายบัญชี" class="inp"></div>
-              <div><label class="lbl">เบอร์โทร/อีเมล <span class="text-red-500">*</span></label><input id="form-contact" required placeholder="เช่น 081-xxx-xxxx" class="inp"></div>
+              <div><label class="lbl">ฝ่าย <span class="text-red-500">*</span></label><select id="form-dept" required class="inp"></select></div>
+              <div><label class="lbl">เบอร์ติดต่อกลับ <span class="text-red-500">*</span></label><input id="form-contact" required placeholder="เช่น 442 " class="inp"></div>
             </div>
           </div>
           <div class="space-y-4">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. ข้อมูลปัญหา</h3>
             <div><label class="lbl">ประเภทของเรื่อง <span class="text-red-500">*</span></label>
-              <select id="form-category" required class="inp">
-                <option value="">-- เลือกประเภทปัญหา --</option>
-                <option>อุปกรณ์คอมพิวเตอร์ / จอภาพ / เมาส์ / คีย์บอร์ด</option>
-                <option>โปรแกรมระบบงาน / ERP / Microsoft Office</option>
-                <option>ระบบเครือข่าย / อินเทอร์เน็ต / Wi-Fi / VPN</option>
-                <option>บัญชีผู้ใช้ / สิทธิ์ใช้งาน / ลืมรหัสผ่าน</option>
-                <option>เครื่องพิมพ์ / สแกนเนอร์</option>
-                <option>อื่น ๆ</option>
-              </select></div>
+              <select id="form-category" required onchange="onCategoryChange()" class="inp"><option value="">-- เลือกประเภทปัญหา --</option></select></div>
             <div><label class="lbl">หัวข้อเรื่อง <span class="text-red-500">*</span></label><input id="form-title" required placeholder="เช่น เปิดโปรแกรม ERP ไม่ได้" class="inp"></div>
             <div><label class="lbl">รายละเอียด <span class="text-red-500">*</span></label>
               <textarea id="form-desc" required rows="4" placeholder="อาการที่พบ ขั้นตอนก่อนเกิดปัญหา หรือข้อความ Error ที่ปรากฏ" class="inp"></textarea></div>
@@ -129,6 +135,22 @@
             <button id="submit-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2">✓ ส่งคำร้อง</button>
           </div>
         </form>
+      </div>
+
+      <!-- Popup แนะนำวิธีแก้ปัญหาเบื้องต้น (แสดงข้างฟอร์มบนจอใหญ่ / เด้งจากด้านล่างบนมือถือ) -->
+      <aside id="kb-tip" class="hidden">
+        <div class="bg-white border-2 border-amber-300 rounded-t-2xl lg:rounded-2xl shadow-2xl lg:shadow-lg flex flex-col overflow-hidden" style="max-height:inherit">
+          <div class="bg-amber-100 px-4 py-3 flex justify-between items-start gap-2 shrink-0">
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-amber-900">💡 ลองแก้ปัญหาเบื้องต้นก่อนแจ้ง</p>
+              <p id="kb-tip-cat" class="text-xs text-amber-800 mt-0.5"></p>
+            </div>
+            <button type="button" onclick="hideKBTip()" aria-label="ปิด" class="text-xl leading-none text-amber-800 hover:opacity-70 shrink-0">✕</button>
+          </div>
+          <div id="kb-tip-list" class="p-3 space-y-3 overflow-y-auto"></div>
+          <p class="px-4 py-2 text-[11px] text-slate-500 bg-slate-50 border-t shrink-0">ทำตามแล้วยังไม่หาย? กรอกแจ้งปัญหาต่อได้เลย</p>
+        </div>
+      </aside>
       </div>
     </section>
 
@@ -194,6 +216,70 @@
       </div>
     </section>
 
+    <!-- ===== DASHBOARD VIEW (IT) ===== -->
+    <section id="dashboard-view" class="hidden space-y-5">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold">📊 Dashboard ปัญหาไอที</h2>
+            <p id="dash-period-text" class="text-xs text-slate-500 mt-1"></p>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+            <div><label class="lbl">ปี (พ.ศ.)</label><select id="dash-year" onchange="renderDashboard()" class="inp"></select></div>
+            <div><label class="lbl">เดือน</label><select id="dash-month" onchange="renderDashboard()" class="inp"></select></div>
+            <div class="col-span-2 md:col-span-1"><label class="lbl">ฝ่าย</label><select id="dash-dept" onchange="renderDashboard()" class="inp"></select></div>
+            <div class="col-span-2 md:col-span-2"><label class="lbl">ประเภทปัญหา</label><select id="dash-cat" onchange="renderDashboard()" class="inp"></select></div>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="setDashThisMonth()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-xs">เดือนนี้</button>
+          <button onclick="setDashThisYear()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-xs">ทั้งปีนี้</button>
+          <button onclick="resetDashExtra()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-xs">ล้างตัวกรองฝ่าย/ประเภท</button>
+          <button onclick="loadDashboard()" class="px-3 py-1.5 border border-slate-300 hover:bg-slate-50 rounded-lg text-xs">🔄 รีเฟรชข้อมูล</button>
+        </div>
+      </div>
+
+      <div id="loading-dash" class="hidden text-center py-10 text-slate-500"><div class="spinner mb-2"></div><p class="text-sm">กำลังโหลดข้อมูล...</p></div>
+
+      <div id="dash-content" class="space-y-5">
+        <p id="dash-empty" class="hidden text-center text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl py-3">ไม่พบรายการแจ้งปัญหาในช่วงเวลาที่เลือก</p>
+
+        <div id="dash-kpis" class="grid grid-cols-2 lg:grid-cols-5 gap-3"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <div class="lg:col-span-3 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
+              <h3 class="font-bold">🏆 ปัญหาที่พบมากที่สุด (แยกตามประเภท)</h3>
+              <span class="text-[11px] text-slate-400">คลิกแถวเพื่อกรองเฉพาะประเภทนั้น</span>
+            </div>
+            <div id="dash-rank" class="space-y-2"></div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h3 class="font-bold mb-3">📌 สถานะงาน <span id="dash-status-scope" class="text-xs font-normal text-slate-400"></span></h3>
+            <div id="dash-status"></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="font-bold mb-3">📈 <span id="dash-trend-title">แนวโน้มจำนวนเรื่องที่แจ้ง</span></h3>
+          <div id="dash-trend" class="overflow-x-auto"></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h3 class="font-bold mb-3">🗂️ รายการที่ตรงกับตัวกรอง <span id="dash-table-count" class="text-xs font-normal text-slate-400"></span></h3>
+          <div class="overflow-auto max-h-96 border border-slate-100 rounded-lg">
+            <table class="w-full text-sm">
+              <thead class="sticky top-0"><tr class="border-b-2 border-slate-200 bg-slate-50 text-left">
+                <th class="px-3 py-2">Incident ID</th><th class="px-3 py-2">หัวข้อเรื่อง</th><th class="px-3 py-2">ประเภท</th>
+                <th class="px-3 py-2">ผู้แจ้ง</th><th class="px-3 py-2">ฝ่าย</th><th class="px-3 py-2">สถานะ</th><th class="px-3 py-2">วันที่แจ้ง</th>
+              </tr></thead>
+              <tbody id="dash-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== KB VIEW (แก้ปัญหาเบื้องต้น) ===== -->
     <section id="kb-view" class="hidden space-y-5">
       <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
@@ -248,8 +334,8 @@
               <option value="user">👤 User — แจ้งปัญหาและติดตามงานของตัวเอง</option>
               <option value="it">🛠️ IT — จัดการทุกเคส และจัดการผู้ใช้</option>
             </select></div>
-          <div><label class="lbl">แผนก/สาขา</label><input id="u-dept" class="inp"></div>
-          <div><label class="lbl">เบอร์โทร/อีเมล</label><input id="u-contact" class="inp"></div>
+          <div><label class="lbl">ฝ่าย</label><select id="u-dept" class="inp"></select></div>
+          <div><label class="lbl">เบอร์ติดต่อกลับ</label><input id="u-contact" class="inp"></div>
           <div><label class="lbl">สถานะบัญชี</label>
             <select id="u-active" class="inp"><option value="Yes">✅ ใช้งาน</option><option value="No">⛔ ระงับการใช้งาน</option></select></div>
           <div class="flex gap-2 pt-2">
@@ -293,7 +379,7 @@
         <div><p class="lbl">🩺 อาการเบื้องต้น</p><p id="pdf-symptoms" class="whitespace-pre-wrap text-slate-700"></p></div>
         <div><p class="lbl">🛠️ วิธีการดำเนินการ</p><p id="pdf-steps" class="whitespace-pre-wrap text-slate-700"></p></div>
         <div class="p-3 bg-blue-50 rounded-lg text-xs">ทำตามแล้วยังไม่หาย?
-          <button onclick="closePDF(); showCreateView();" class="block mt-2 w-full py-2 bg-blue-600 text-white rounded-lg font-semibold">➕ แจ้งปัญหาใหม่</button></div>
+          <button onclick="closePDF(); if ($('create-view').classList.contains('hidden')) showCreateView();" class="block mt-2 w-full py-2 bg-blue-600 text-white rounded-lg font-semibold">➕ แจ้งปัญหาใหม่</button></div>
       </div>
       <iframe id="pdf-frame" class="lg:col-span-2 w-full h-full min-h-[50vh]" allow="autoplay"></iframe>
     </div>
@@ -311,11 +397,14 @@
       <input type="hidden" id="kb-id">
       <div><label class="lbl">1. ชื่อเรื่อง <span class="text-red-500">*</span></label>
         <input id="kb-title" required placeholder="เช่น สั่งพิมพ์แล้วเครื่องพิมพ์ไม่ทำงาน" class="inp"></div>
-      <div><label class="lbl">2. อาการเบื้องต้น <span class="text-red-500">*</span></label>
+      <div><label class="lbl">2. ประเภทปัญหา <span class="text-red-500">*</span></label>
+        <select id="kb-category" required class="inp"></select>
+        <p class="text-[11px] text-slate-400 mt-1">ใช้จับคู่ ให้ระบบแนะนำวิธีนี้อัตโนมัติเมื่อผู้ใช้เลือกประเภทนี้ตอนแจ้งปัญหา</p></div>
+      <div><label class="lbl">3. อาการเบื้องต้น <span class="text-red-500">*</span></label>
         <textarea id="kb-symptoms" required rows="3" placeholder="เช่น กดสั่งพิมพ์แล้วงานค้างในคิว / ขึ้นข้อความ Printer Offline" class="inp"></textarea></div>
-      <div><label class="lbl">3. วิธีการดำเนินการ (สรุปสั้น ๆ) <span class="text-red-500">*</span></label>
+      <div><label class="lbl">4. วิธีการดำเนินการ (สรุปสั้น ๆ) <span class="text-red-500">*</span></label>
         <textarea id="kb-steps" required rows="5" placeholder="1. ตรวจสอบสายไฟและสาย LAN&#10;2. ปิด-เปิดเครื่องพิมพ์&#10;3. ลบงานค้างในคิว แล้วสั่งพิมพ์ใหม่" class="inp"></textarea></div>
-      <div><label class="lbl">4. ไฟล์คู่มือ PDF <span id="kb-file-req" class="text-red-500">*</span></label>
+      <div><label class="lbl">5. ไฟล์คู่มือ PDF <span id="kb-file-req" class="text-red-500">*</span></label>
         <input id="kb-file" type="file" accept="application/pdf,.pdf" class="inp file:mr-3 file:px-3 file:py-1 file:border-0 file:rounded file:bg-blue-50 file:text-blue-700">
         <p id="kb-current-file" class="text-xs text-slate-500 mt-1"></p>
         <p class="text-[11px] text-slate-400">รองรับเฉพาะ .pdf ขนาดไม่เกิน 10 MB</p></div>
@@ -333,7 +422,7 @@
 // ==========================================
 // CONFIG — ใส่ Web app URL (ลงท้าย /exec)
 // ==========================================
-const API_URL = "https://script.google.com/macros/s/AKfycbwqNg2JFwvq_EDmHeJSMa8hbDac21Xsv1a-83uCarQst3t74ph5icQ8iUpEF-XduEnS-A/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwbRQnM1OMOi_typ9XZnr1DGiW_qotzBCsjaigy6hHP-ATzt1HnTmIB_6CDybBrTlpC8g/exec";
 const MAX_PDF_MB = 10;
 
 const STATUS_ICON = { 'New':'🔵', 'In Progress':'🟡', 'Pending':'🟠', 'Resolved':'🟢', 'Closed':'⚪' };
@@ -389,6 +478,7 @@ function enterApp() {
   $('header-role').innerText = isIT() ? '🛠️ เจ้าหน้าที่ IT' : '👤 ผู้ใช้งาน';
   $('list-title').innerText = isIT() ? '📋 รายการแจ้งปัญหาทั้งหมด' : '📋 รายการแจ้งปัญหาของคุณ';
   $('nav-users').classList.toggle('hidden', !isIT());
+  $('nav-dashboard').classList.toggle('hidden', !isIT());
   $('kb-add-btn').classList.toggle('hidden', !isIT());
   showListView();
 }
@@ -400,6 +490,7 @@ async function handleLogout() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  $('form-category').insertAdjacentHTML('beforeend', CATEGORIES.map(c => `<option>${esc(c)}</option>`).join(''));
   const saved = sessionStorage.getItem('sd_session');
   if (saved) { session = JSON.parse(saved); enterApp(); }
 });
@@ -409,18 +500,21 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePDF()
 // NAVIGATION
 // ==========================================
 function showOnly(id, nav) {
-  ['list-view','create-view','detail-view','kb-view','users-view','password-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
-  ['nav-list','nav-kb','nav-users','nav-password'].forEach(n => $(n).classList.toggle('active', n === nav));
+  ['list-view','create-view','detail-view','dashboard-view','kb-view','users-view','password-view'].forEach(v => $(v).classList.toggle('hidden', v !== id));
+  ['nav-list','nav-dashboard','nav-kb','nav-users','nav-password'].forEach(n => $(n).classList.toggle('active', n === nav));
   window.scrollTo(0, 0);
 }
 function showListView()     { showOnly('list-view', 'nav-list'); loadTickets(); }
+function showDashboardView() { if (!isIT()) return; showOnly('dashboard-view', 'nav-dashboard'); loadDashboard(); }
 function showKBView()       { showOnly('kb-view', 'nav-kb'); loadKB(); }
 function showPasswordView() { $('pw-form').reset(); showOnly('password-view', 'nav-password'); }
 function showUsersView()    { showOnly('users-view', 'nav-users'); newUserForm(); loadUsers(); }
 function showCreateView() {
   $('create-form').reset();
+  hideKBTip();
+  fetchKB().catch(() => {});   // โหลดคู่มือเตรียมไว้เงียบ ๆ
   $('form-name').value = session.user.name || '';
-  $('form-dept').value = session.user.department || '';
+  fillDeptSelect($('form-dept'), session.user.department);
   $('form-contact').value = session.user.contact || '';
   showOnly('create-view', 'nav-list');
 }
@@ -429,18 +523,21 @@ function showDetailView(id) { selectedTicketId = id; renderTicketDetail(id); sho
 // ==========================================
 // TICKETS
 // ==========================================
+async function fetchTickets() {
+  const r = await api('getTickets');
+  engineers = r.engineers || [];
+  tickets = (r.tickets || []).map(t => {
+    let notes = []; try { notes = JSON.parse(t.WorkNotes || '[]'); } catch (e) {}
+    return { ...t, workNotes: notes };
+  });
+}
+
 async function loadTickets() {
   $('loading-list').classList.remove('hidden');
   $('ticket-table-container').classList.add('hidden');
   $('no-ticket-msg').classList.add('hidden');
-  try {
-    const r = await api('getTickets');
-    engineers = r.engineers || [];
-    tickets = (r.tickets || []).map(t => {
-      let notes = []; try { notes = JSON.parse(t.WorkNotes || '[]'); } catch (e) {}
-      return { ...t, workNotes: notes };
-    });
-  } catch (err) { showErr(err, '❌ โหลดข้อมูลไม่สำเร็จ: '); tickets = []; }
+  try { await fetchTickets(); }
+  catch (err) { showErr(err, '❌ โหลดข้อมูลไม่สำเร็จ: '); tickets = []; }
   finally { $('loading-list').classList.add('hidden'); renderTicketList(); }
 }
 
@@ -554,19 +651,253 @@ async function saveTicket() {
 }
 
 // ==========================================
+// DASHBOARD (IT)
+// ==========================================
+// รายการประเภทปัญหา — แก้ที่นี่ที่เดียว ฟอร์มแจ้งปัญหาและ Dashboard จะอัปเดตตาม
+const CATEGORIES = [
+  'อุปกรณ์คอมพิวเตอร์ / จอภาพ / เมาส์ / คีย์บอร์ด',
+  'โปรแกรม Microsoft Office / 365',
+  'อินเทอร์เน็ต / Wi-Fi ',
+  'บัญชีผู้ใช้ / สิทธิ์ใช้งาน / ลืมรหัสผ่าน',
+  'เครื่องพิมพ์ / สแกนเนอร์',
+  'โทรศัพท์',
+  'ERP',
+  'CCTV',
+  'VPN',
+  'กู้ไฟล์/ข้อมูลหาย',
+  'ERP',
+  'รหัสเข้าคอมพิวเตอร์ / AD User ',
+  'ลงโปรแกรมเพิ่มเติม',
+  'Autodesk / CAD / โปรแกรมออกแบบต่าง ๆ ',
+  'สร้าง Folder',
+  'สิทธิ์การเข้าถึง Folder',
+  'อื่น ๆ'
+  
+];
+// รายการฝ่าย — แก้ที่นี่ที่เดียว ฟอร์มสร้างผู้ใช้ ฟอร์มแจ้งปัญหา และ Dashboard จะอัปเดตตาม
+const DEPARTMENTS = ['IT', 'HR', 'SCD', 'DVD', 'CXD', 'SAD', 'PMO', 'PSD'];
+const deptOf = t => {
+  const v = String(t.Department || '').trim();
+  return DEPARTMENTS.find(d => d.toLowerCase() === v.toLowerCase()) || v || 'ไม่ระบุ';
+};
+// เติม Dropdown ประเภทปัญหา (ใช้ในฟอร์ม KB) ถ้าค่าเดิมไม่อยู่ในรายการจะเพิ่มให้
+function fillCatSelect(sel, current) {
+  const cur = String(current || '').trim();
+  const list = [...CATEGORIES];
+  if (cur && !list.includes(cur)) list.push(cur);
+  sel.innerHTML = '<option value="">-- เลือกประเภทปัญหา --</option>' + list.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value = cur;
+}
+// เติม Dropdown ฝ่าย ถ้าค่าเดิมไม่อยู่ในรายการ (ข้อมูลเก่า) จะเพิ่มเป็นตัวเลือกให้ ไม่ให้ค่าหาย
+function fillDeptSelect(sel, current) {
+  const cur = String(current || '').trim();
+  const list = [...DEPARTMENTS];
+  const match = list.find(d => d.toLowerCase() === cur.toLowerCase());
+  if (cur && !match) list.push(cur);
+  sel.innerHTML = '<option value="">-- เลือกฝ่าย --</option>' + list.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  sel.value = match || cur || '';
+}
+const MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const STATUS_ORDER = ['New','In Progress','Pending','Resolved','Closed'];
+const STATUS_COLOR = { 'New':'#3b82f6', 'In Progress':'#eab308', 'Pending':'#f97316', 'Resolved':'#22c55e', 'Closed':'#94a3b8' };
+const OPEN_STATUS = ['New','In Progress','Pending'];
+const DONE_STATUS = ['Resolved','Closed'];
+let dashInit = false;
+
+const catOf = t => String(t.Category || '').trim() || 'ไม่ระบุ';
+
+// อ่านวันที่ได้ทั้ง "21/10/2026 14:30" (ค.ศ. จาก Sheet) และ "21/10/2569 14:30:05" (พ.ศ. จาก toLocaleString th-TH)
+function parseLoggedDate(s) {
+  const m = String(s || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,]+(\d{1,2}):(\d{2}))?/);
+  if (!m) return null;
+  let y = +m[3]; if (y > 2400) y -= 543;
+  const d = new Date(y, +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+  return isNaN(d) ? null : d;
+}
+function fmtDuration(ms) {
+  const min = ms / 60000;
+  if (min < 60) return Math.round(min) + ' นาที';
+  const h = min / 60;
+  return h < 24 ? h.toFixed(1) + ' ชั่วโมง' : (h / 24).toFixed(1) + ' วัน';
+}
+function deltaHTML(cur, prev, label) {
+  if (!prev) return `<span class="text-slate-400">ไม่มีข้อมูล${label}ให้เทียบ</span>`;
+  const p = Math.round((cur - prev) / prev * 100);
+  const cls = p > 0 ? 'text-red-600' : p < 0 ? 'text-emerald-600' : 'text-slate-500';
+  return `<span class="${cls} font-semibold">${p > 0 ? '▲' : p < 0 ? '▼' : '■'} ${Math.abs(p)}%</span> <span class="text-slate-400">เทียบ${label}</span>`;
+}
+
+async function loadDashboard() {
+  $('loading-dash').classList.remove('hidden');
+  $('dash-content').classList.add('hidden');
+  try { await fetchTickets(); }
+  catch (err) { showErr(err, '❌ โหลดข้อมูลไม่สำเร็จ: '); tickets = []; }
+  finally {
+    $('loading-dash').classList.add('hidden');
+    $('dash-content').classList.remove('hidden');
+    fillDashFilters(); renderDashboard();
+  }
+}
+
+function fillDashFilters() {
+  const now = new Date();
+  const years = new Set([now.getFullYear()]);
+  const cats = new Set(CATEGORIES);
+  const depts = new Set(DEPARTMENTS);
+  tickets.forEach(t => { const d = parseLoggedDate(t.LoggedDate); if (d) years.add(d.getFullYear()); cats.add(catOf(t)); depts.add(deptOf(t)); });
+  const keep = { y: $('dash-year').value, m: $('dash-month').value, c: $('dash-cat').value, d: $('dash-dept').value };
+
+  $('dash-year').innerHTML = [...years].sort((a, b) => b - a).map(y => `<option value="${y}">${y + 543}</option>`).join('');
+  $('dash-month').innerHTML = '<option value="">ทั้งปี</option>' + MONTHS_TH.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+  $('dash-dept').innerHTML = '<option value="">ทุกฝ่าย</option>' + [...depts].map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  $('dash-cat').innerHTML = '<option value="">ทุกประเภท</option>' + [...cats].map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  if (!dashInit) { $('dash-year').value = now.getFullYear(); $('dash-month').value = now.getMonth() + 1; $('dash-cat').value = ''; $('dash-dept').value = ''; dashInit = true; }
+  else { $('dash-year').value = keep.y; $('dash-month').value = keep.m; $('dash-cat').value = keep.c; $('dash-dept').value = keep.d; }
+}
+
+function setDashThisMonth() { const n = new Date(); $('dash-year').value = n.getFullYear(); $('dash-month').value = n.getMonth() + 1; renderDashboard(); }
+function setDashThisYear()  { $('dash-year').value = new Date().getFullYear(); $('dash-month').value = ''; renderDashboard(); }
+function resetDashExtra()   { $('dash-cat').value = ''; $('dash-dept').value = ''; renderDashboard(); }
+function toggleDashCat(c)   { $('dash-cat').value = $('dash-cat').value === c ? '' : c; renderDashboard(); }
+
+function renderDashboard() {
+  const y = +$('dash-year').value, m = $('dash-month').value, cat = $('dash-cat').value, dept = $('dash-dept').value;
+  const rows = tickets.map(t => ({ t, d: parseLoggedDate(t.LoggedDate) })).filter(r => r.d);
+  const inPeriod = (r, yy, mm) => r.d.getFullYear() === yy && (mm === '' || r.d.getMonth() + 1 === +mm);
+
+  // ช่วงเวลาก่อนหน้า (ไว้เทียบ): เดือนก่อน หรือ ปีก่อน
+  let py = y, pm = '', prevLabel = 'ปีก่อน';
+  if (m !== '') { prevLabel = 'เดือนก่อน'; pm = +m - 1; py = y; if (pm === 0) { pm = 12; py = y - 1; } }
+
+  const byDept = r => !dept || deptOf(r.t) === dept;
+  const period = rows.filter(r => inPeriod(r, y, m) && byDept(r));          // ตามฝ่าย ทุกประเภท
+  const scope  = cat ? period.filter(r => catOf(r.t) === cat) : period;     // ตามตัวกรองประเภท
+  const prevScope = rows.filter(r => inPeriod(r, py, pm) && byDept(r) && (!cat || catOf(r.t) === cat));
+
+  $('dash-period-text').innerText = 'ข้อมูลของ ' + (m ? 'เดือน' + MONTHS_TH[+m - 1] + ' ' : 'ทั้งปี ') + 'พ.ศ. ' + (y + 543) + ' · ฝ่าย: ' + (dept || 'ทุกฝ่าย') + ' · ประเภท: ' + (cat || 'ทุกประเภท') + ' (นับตามวันที่แจ้ง)';
+  $('dash-empty').classList.toggle('hidden', period.length > 0);
+
+  // ----- KPI -----
+  const open = scope.filter(r => OPEN_STATUS.includes(r.t.Status)).length;
+  const done = scope.filter(r => DONE_STATUS.includes(r.t.Status)).length;
+  const durs = scope.map(r => {
+    if (!DONE_STATUS.includes(r.t.Status)) return null;
+    const rd = parseLoggedDate(r.t.ResolvedDate);
+    return rd && rd >= r.d ? rd - r.d : null;
+  }).filter(x => x !== null);
+  const avg = durs.length ? fmtDuration(durs.reduce((a, b) => a + b, 0) / durs.length) : '-';
+
+  const counts = {};
+  [...CATEGORIES].forEach(c => counts[c] = 0);
+  period.forEach(r => { const c = catOf(r.t); counts[c] = (counts[c] || 0) + 1; });
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'th'));
+  const top = ranked[0] && ranked[0][1] > 0 ? ranked[0] : null;
+
+  const kpi = (icon, label, value, sub, cls = '') => `
+    <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+      <p class="text-xs text-slate-500">${icon} ${label}</p>
+      <p class="text-2xl font-bold mt-1 ${cls}">${value}</p>
+      <p class="text-[11px] mt-1 text-slate-500 leading-snug">${sub}</p>
+    </div>`;
+  $('dash-kpis').innerHTML =
+    kpi('🎫', 'จำนวนเรื่องทั้งหมด', scope.length, deltaHTML(scope.length, prevScope.length, prevLabel)) +
+    kpi('🔓', 'ยังไม่ปิดงาน', open, 'New / In Progress / Pending', open ? 'text-amber-600' : '') +
+    kpi('✅', 'แก้ไขเสร็จแล้ว', done, scope.length ? Math.round(done / scope.length * 100) + '% ของทั้งหมด' : '-', 'text-emerald-600') +
+    kpi('⏱️', 'เวลาแก้ไขเฉลี่ย', avg, durs.length ? 'จาก ' + durs.length + ' เรื่องที่ปิดแล้ว' : 'ยังไม่มีเรื่องที่ปิด') +
+    `<div class="col-span-2 lg:col-span-1">${kpi('🔥', 'พบมากที่สุด', top ? '<span class="text-base leading-tight block">' + esc(top[0]) + '</span>' : '-', top ? top[1] + ' เรื่อง (' + Math.round(top[1] / period.length * 100) + '% ของช่วงนี้)' : 'ไม่มีข้อมูล', 'text-red-600')}</div>`;
+
+  // ----- Ranking -----
+  const max = Math.max(1, ...ranked.map(r => r[1]));
+  $('dash-rank').innerHTML = ranked.map(([c, n], i) => {
+    const sel = cat === c, dim = cat && !sel;
+    const medal = n > 0 && i < 3 ? ['🥇', '🥈', '🥉'][i] : '';
+    const pct = period.length ? Math.round(n / period.length * 100) : 0;
+    const color = i === 0 && n > 0 ? '#ef4444' : '#3b82f6';
+    return `
+    <button type="button" data-cat="${esc(c)}" onclick="toggleDashCat(this.dataset.cat)"
+      class="rank-row w-full text-left p-2 rounded-lg hover:bg-slate-50 ${sel ? 'ring-2 ring-blue-500 bg-blue-50' : ''} ${dim ? 'opacity-40' : ''}">
+      <div class="flex justify-between gap-3 text-sm">
+        <span class="min-w-0">${medal} ${esc(c)}</span>
+        <span class="shrink-0 font-semibold">${n} <span class="text-xs font-normal text-slate-400">(${pct}%)</span></span>
+      </div>
+      <div class="h-2.5 bg-slate-100 rounded-full mt-1.5 overflow-hidden"><div class="h-full rounded-full" style="width:${n / max * 100}%;background:${color}"></div></div>
+    </button>`;
+  }).join('');
+
+  // ----- Status -----
+  $('dash-status-scope').innerText = (cat || dept) ? '(ตามตัวกรองที่เลือก)' : '(ทั้งหมด)';
+  const sc = {}; STATUS_ORDER.forEach(s => sc[s] = 0);
+  scope.forEach(r => { sc[r.t.Status] = (sc[r.t.Status] || 0) + 1; });
+  $('dash-status').innerHTML = scope.length ? `
+    <div class="flex h-4 rounded-full overflow-hidden bg-slate-100 mb-4">
+      ${Object.entries(sc).filter(([, n]) => n).map(([s, n]) => `<div title="${esc(s)}: ${n}" style="width:${n / scope.length * 100}%;background:${STATUS_COLOR[s] || '#cbd5e1'}"></div>`).join('')}
+    </div>
+    <div class="space-y-2 text-sm">
+      ${Object.entries(sc).map(([s, n]) => `
+        <div class="flex justify-between items-center">
+          <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:${STATUS_COLOR[s] || '#cbd5e1'}"></span>${esc(s)}</span>
+          <span class="font-semibold">${n} <span class="text-xs font-normal text-slate-400">(${Math.round(n / scope.length * 100)}%)</span></span>
+        </div>`).join('')}
+    </div>` : '<p class="text-sm text-slate-400 text-center py-6">ไม่มีข้อมูล</p>';
+
+  // ----- Trend (รายวันถ้าเลือกเดือน / รายเดือนถ้าเลือกทั้งปี) -----
+  let labels, series, unit;
+  if (m !== '') {
+    const days = new Date(y, +m, 0).getDate();
+    labels = Array.from({ length: days }, (_, i) => String(i + 1));
+    series = labels.map(() => 0);
+    scope.forEach(r => series[r.d.getDate() - 1]++);
+    unit = 'รายวัน';
+  } else {
+    labels = MONTHS_SHORT; series = labels.map(() => 0);
+    scope.forEach(r => series[r.d.getMonth()]++);
+    unit = 'รายเดือน';
+  }
+  $('dash-trend-title').innerText = 'แนวโน้มจำนวนเรื่องที่แจ้ง (' + unit + ')';
+  const tmax = Math.max(1, ...series), maxPx = 110;
+  $('dash-trend').innerHTML = `<div class="flex items-end gap-1 h-[160px]" style="min-width:${labels.length > 12 ? labels.length * 22 : 0}px">
+    ${series.map((n, i) => `
+      <div class="flex-1 flex flex-col items-center justify-end min-w-0" title="${labels[i]}: ${n} เรื่อง">
+        <span class="text-[10px] text-slate-500 h-3.5 leading-none">${n || ''}</span>
+        <div class="trend-bar w-full max-w-[36px] rounded-t" style="height:${n ? Math.max(4, n / tmax * maxPx) : 0}px;background:${n && n === tmax ? '#ef4444' : '#3b82f6'}"></div>
+        <span class="text-[10px] text-slate-400 mt-1 h-3.5 leading-none">${labels.length <= 12 || i % 2 === 0 ? labels[i] : ''}</span>
+      </div>`).join('')}
+  </div>`;
+
+  // ----- ตารางรายการ -----
+  const list = [...scope].sort((a, b) => b.d - a.d);
+  $('dash-table-count').innerText = `(${list.length} รายการ)`;
+  $('dash-table-body').innerHTML = list.map(({ t }) => `
+    <tr class="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onclick="showDetailView('${esc(t.ID)}')">
+      <td class="px-3 py-2 font-mono font-bold text-blue-600 whitespace-nowrap">${esc(t.ID)}</td>
+      <td class="px-3 py-2 max-w-xs truncate">${esc(t.Title)}</td>
+      <td class="px-3 py-2 text-xs text-slate-600">${esc(catOf(t))}</td>
+      <td class="px-3 py-2 text-slate-600 whitespace-nowrap">${esc(t.Name)}</td>
+      <td class="px-3 py-2 text-xs font-semibold">${esc(deptOf(t))}</td>
+      <td class="px-3 py-2 text-xs whitespace-nowrap">${STATUS_ICON[t.Status] || '⚪'} ${esc(t.Status)}</td>
+      <td class="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">${esc(t.LoggedDate)}</td>
+    </tr>`).join('') || '<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายการ</td></tr>';
+}
+
+// ==========================================
 // แก้ปัญหาเบื้องต้น (KB)
 // ==========================================
+let kbLoaded = false;
+async function fetchKB() { kbItems = (await api('listKB')).items || []; kbLoaded = true; }
+
 async function loadKB() {
   $('loading-kb').classList.remove('hidden');
   $('kb-list').innerHTML = ''; $('kb-empty').classList.add('hidden');
-  try { kbItems = (await api('listKB')).items || []; }
+  try { await fetchKB(); }
   catch (err) { showErr(err, '❌ โหลดคู่มือไม่สำเร็จ: '); kbItems = []; }
   finally { $('loading-kb').classList.add('hidden'); renderKB(); }
 }
 
 function renderKB() {
   const q = $('kb-search').value.trim().toLowerCase();
-  const list = q ? kbItems.filter(k => [k.id, k.title, k.symptoms, k.steps].some(x => String(x).toLowerCase().includes(q))) : kbItems;
+  const list = q ? kbItems.filter(k => [k.id, k.title, k.category, k.symptoms, k.steps].some(x => String(x).toLowerCase().includes(q))) : kbItems;
   const it = isIT();
   $('kb-list').innerHTML = list.map(k => `
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition ${k.active ? '' : 'opacity-60 border-dashed'}">
@@ -575,6 +906,8 @@ function renderKB() {
         ${k.active ? '' : '<span class="text-[11px] px-2 py-0.5 bg-slate-200 rounded-full">🙈 ซ่อนอยู่</span>'}
       </div>
       <h3 class="font-bold leading-snug">📄 ${esc(k.title)}</h3>
+      ${k.category ? `<div><span class="inline-block text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">🏷️ ${esc(k.category)}</span></div>`
+        : (it ? '<div><span class="inline-block text-[11px] px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">⚠️ ยังไม่ระบุประเภท — กดแก้ไขเพื่อกำหนด</span></div>' : '')}
       <div class="text-xs"><span class="font-semibold text-slate-500">อาการ:</span>
         <p class="line-clamp-2 text-slate-600 whitespace-pre-wrap">${esc(k.symptoms)}</p></div>
       <div class="mt-auto pt-2 flex flex-wrap gap-2">
@@ -585,6 +918,38 @@ function renderKB() {
       ${it ? `<p class="text-[11px] text-slate-400">แก้ไขล่าสุด: ${esc(k.updatedBy)} · ${esc(k.updatedDate)}</p>` : ''}
     </div>`).join('');
   $('kb-empty').classList.toggle('hidden', list.length > 0);
+}
+
+
+// ----- Popup แนะนำวิธีแก้ปัญหาเบื้องต้น (หน้าแจ้งปัญหา) -----
+function hideKBTip() {
+  $('kb-tip').classList.add('hidden');
+  $('create-wrap').classList.remove('with-tip');
+}
+async function onCategoryChange() {
+  const cat = $('form-category').value;
+  if (!cat) return hideKBTip();
+  if (!kbLoaded) { try { await fetchKB(); } catch (e) { return; } }
+  if ($('form-category').value !== cat) return;   // ผู้ใช้เปลี่ยนประเภทระหว่างรอโหลด
+  renderKBTip(cat);
+}
+function renderKBTip(cat) {
+  const items = kbItems.filter(k => k.active && k.category === cat);
+  if (!items.length) return hideKBTip();
+  $('kb-tip-cat').innerText = '🏷️ ' + cat + ' · พบ ' + items.length + ' วิธี';
+  $('kb-tip-list').innerHTML = items.map(k => `
+    <div class="rounded-xl border border-slate-200 p-3 space-y-2">
+      <p class="font-semibold text-sm leading-snug">📄 ${esc(k.title)}</p>
+      <div class="text-xs"><span class="font-semibold text-slate-500">อาการ:</span>
+        <div class="line-clamp-2 text-slate-600 whitespace-pre-wrap">${esc(k.symptoms)}</div></div>
+      <div class="text-xs bg-slate-50 rounded-lg p-2">
+        <span class="font-semibold text-slate-500 block mb-0.5">วิธีทำเบื้องต้น:</span>
+        <div class="line-clamp-4 text-slate-700 whitespace-pre-wrap">${esc(k.steps)}</div></div>
+      <button type="button" onclick="openPDF('${esc(k.id)}')" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">📖 อ่านวิธีแก้ไขฉบับเต็ม</button>
+    </div>`).join('');
+  $('create-wrap').classList.add('with-tip');
+  $('kb-tip').classList.remove('hidden');
+  $('kb-tip').scrollTop = 0;
 }
 
 // ----- เปิดอ่าน PDF -----
@@ -612,6 +977,7 @@ function openKBForm(id) {
   $('kb-id').value = k ? k.id : '';
   $('kb-form-title').innerText = k ? '✏️ แก้ไข ' + k.id : '➕ เพิ่มวิธีแก้ปัญหา';
   $('kb-title').value = k ? k.title : '';
+  fillCatSelect($('kb-category'), k ? k.category : '');
   $('kb-symptoms').value = k ? k.symptoms : '';
   $('kb-steps').value = k ? k.steps : '';
   $('kb-active').value = k && !k.active ? 'No' : 'Yes';
@@ -642,7 +1008,7 @@ async function handleSaveKB(e) {
   const btn = $('kb-save-btn'); busy(btn, true, f ? 'กำลังอัปโหลด...' : 'กำลังบันทึก...');
   try {
     const r = await api('saveKB', {
-      id, title: $('kb-title').value.trim(), symptoms: $('kb-symptoms').value.trim(),
+      id, title: $('kb-title').value.trim(), category: $('kb-category').value, symptoms: $('kb-symptoms').value.trim(),
       steps: $('kb-steps').value.trim(), active: $('kb-active').value,
       file: f ? { name: f.name, mime: 'application/pdf', data: await readFileBase64(f) } : null
     });
@@ -692,6 +1058,7 @@ function newUserForm() {
   $('u-username').readOnly = false;
   $('u-password-box').classList.remove('hidden');
   $('u-password').required = true;
+  fillDeptSelect($('u-dept'), '');
   $('user-form-title').innerText = '➕ เพิ่มผู้ใช้ใหม่';
 }
 
@@ -701,7 +1068,7 @@ function editUser(username) {
   $('u-username').value = u.username; $('u-username').readOnly = true;
   $('u-password-box').classList.add('hidden'); $('u-password').required = false;
   $('u-fullname').value = u.name; $('u-role').value = u.role;
-  $('u-dept').value = u.department; $('u-contact').value = u.contact;
+  fillDeptSelect($('u-dept'), u.department); $('u-contact').value = u.contact;
   $('u-active').value = u.active ? 'Yes' : 'No';
   $('user-form-title').innerText = '✏️ แก้ไขผู้ใช้: ' + u.username;
   window.scrollTo(0, 0);
